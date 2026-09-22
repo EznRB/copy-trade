@@ -101,3 +101,29 @@ Formato: cada decisão registra contexto, alternativas, decisão, justificativa 
 - **Decisão:** apenas remotos oficiais: Context7 (docs atualizadas — mitiga "nunca inventar endpoint") e GitHub MCP (repos/issues/PRs). Playwright MCP adiado p/ fase do dashboard. Postgres MCP opcional (dev read-only) quando necessário.
 - **Evitados:** qualquer MCP comunitário de Solana/Helius/Jupiter (dados hostis injetados no contexto do LLM + autores não verificados); oh-my-opencode (hooks/telemetria conflitam com a arquitetura de agentes versionada do projeto).
 - **Status:** FACT.
+
+## ADR-011 - Endpoint WSS Helius: mainnet.helius-rpc.com (LaserStream WebSocket)
+
+- **Contexto:** smoke test F1 retornou HTTP 403 em `wss://atlas-mainnet.helius-rpc.com`.
+- **Decisao:** usar `wss://mainnet.helius-rpc.com/?api-key=...` (LaserStream WebSocket).
+- **Evidencia:** documentacao oficial Helius (helius.dev/docs/api-reference/endpoints), verificada em 2026-09-22. Timer de inatividade de 10 min — heartbeat de 30s ja implementado cobre.
+- **Status:** FACT.
+
+## ADR-012 - Schema de env SEM zod .strict()
+
+- **Contexto:** `envSchema.strict()` rejeitava todas as variaveis do OS presentes em `process.env`, impedindo boot.
+- **Decisao:** validar apenas chaves conhecidas; desconhecidas sao ignoradas (zod default, sem .strict()).
+- **Status:** FACT. Seguranca mantida: tipos e limites ainda validados; chaves desconhecidas nunca sao usadas.
+
+## ADR-013 - Fixture de smoke F1: programa Pump.fun como alvo de subscricao
+
+- **Contexto:** gate F1 exige "eventos reais observados" mas ainda nao existe lista de wallets.
+- **Decisao:** subscrever o endereco publico do programa Pump.fun (`6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P`) — volume alto e publico, ideal para validar throughput/dedup sem depender de input do usuario.
+- **Resultado:** RESULT: 780.053 eventos em ~40min (~325/s), dedup funcionando (sigs unicas == total persistido).
+- **Status:** FACT (validado com dados).
+
+## ADR-014 - Risco emergente: retencao de dados e single-instance
+
+- **Contexto:** smoke gerou 568 MB em 40min; executamos acidentalmente 2 processos de ingestao simultaneos.
+- **Decisao:** registrar como debito tecnico da F1.5: (1) politica de retencao RAW→AGGREGATE (§63); (2) guard de instancia unica (lock file) no boot do servico.
+- **Status:** FACT (risco medido), mitigacao pendente.

@@ -136,6 +136,7 @@ Este repositório opera com **múltiplos chats de IA em paralelo**, coordenados 
 4. Nenhum chat (produtor ou revisor) altera `TRADING_MODE`, `LIVE_TRADING_ENABLED` ou constantes `MAX_*` — permanece regra inviolável.
 5. Detalhe operacional completo: `docs/reviews/README.md`.
 6. **Handoff entre sessões:** ao concluir uma fase/sprint (ou antes de contexto se esgotar), o chat produtor atualiza `docs/handoff.md` (bloco datado: feito/em andamento/pendências/próximo passo, com SHAs). Todo chat novo lê `docs/handoff.md` antes de começar.
+7. **Ordem e mensagens entre chats:** `docs/operations/chat-prompts.md` (guia do dono, fluxo obrigatório F1→F10) e `docs/operations/phase-pipeline.md` (papéis e permissões). Estes dois arquivos são normativos tanto quanto este AGENTS.md.
 
 ## 8. Gates de fase (resumo — detalhe em `docs/roadmap.md`)
 

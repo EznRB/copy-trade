@@ -9,8 +9,8 @@
     "github": {
       "type": "remote",
       "url": "https://api.githubcopilot.com/mcp/",
-      "headers": { "Authorization": "Bearer ${GITHUB_TOKEN}" },
-      "enabled": false
+      "headers": { "Authorization": "Bearer {env:GITHUB_TOKEN}" },
+      "enabled": true
     },
     "solana": {
       "type": "remote",
@@ -44,7 +44,7 @@
     },
     "postgres": {
       "type": "local",
-      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"],
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@localhost:5432/copytrade"],
       "enabled": true
     }
   },

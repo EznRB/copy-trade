@@ -140,6 +140,8 @@ Este repositório opera com **múltiplos chats de IA em paralelo**, coordenados 
 
 F0 scaffold → F1 ingestion → F2 wallets → F3 tokens → F4 copyability → F5 backtest → F6 paper → F7 ML → F8 shadow → F9 execution → F10 live controlado. **Nunca pular fases. Nunca pular para live.**
 
+**Gate de segurança por fase:** nenhuma fase é considerada concluída sem que o orchestrator dispare uma sprint do red-team sobre o código novo da fase (ver `docs/security/red-team/README.md`). Fases com findings CRITICAL/HIGH em aberto não podem avançar. O que já roda de forma autônoma em todo push/PR: `check:security` (secrets + audit) no job **Security Gate** do CI; auditoria completa também roda semanalmente via schedule.
+
 ## 8.1 Ferramentas MCP disponíveis
 
 Configurados em `opencode.json` (raiz do projeto):

@@ -135,10 +135,24 @@ Este repositório opera com **múltiplos chats de IA em paralelo**, coordenados 
 3. Commits cujo veredito é REJEITADO **não podem ser mergeados** em master sem correção + nova revisão aprovada.
 4. Nenhum chat (produtor ou revisor) altera `TRADING_MODE`, `LIVE_TRADING_ENABLED` ou constantes `MAX_*` — permanece regra inviolável.
 5. Detalhe operacional completo: `docs/reviews/README.md`.
+6. **Handoff entre sessões:** ao concluir uma fase/sprint (ou antes de contexto se esgotar), o chat produtor atualiza `docs/handoff.md` (bloco datado: feito/em andamento/pendências/próximo passo, com SHAs). Todo chat novo lê `docs/handoff.md` antes de começar.
 
 ## 8. Gates de fase (resumo — detalhe em `docs/roadmap.md`)
 
 F0 scaffold → F1 ingestion → F2 wallets → F3 tokens → F4 copyability → F5 backtest → F6 paper → F7 ML → F8 shadow → F9 execution → F10 live controlado. **Nunca pular fases. Nunca pular para live.**
+
+## 8.1 Protocolo de handoff entre chats/sessões (obrigatório)
+
+Sessões de IA têm contexto finito; a memória durável do projeto é o **repositório**, não a conversa. Portanto:
+
+1. **Ao concluir qualquer fase (ou antes de qualquer compactação/sessão longa)**, o chat de desenvolvimento DEVE:
+   - Atualizar `docs/roadmap.md` (status real da fase, com evidência);
+   - Registrar ADRs novos em `docs/architecture/decision-log.md` (toda escolha entre alternativas);
+   - Escrever/atualizar `docs/handoff.md` com bloco datado contendo: o que foi feito (com SHAs de commit), o que está em andamento, decisões pendentes, problemas conhecidos, e o próximo passo exato.
+2. **Todo chat novo começa lendo**: `AGENTS.md` → `docs/roadmap.md` → `docs/architecture/decision-log.md` → `docs/handoff.md`.
+3. **Commits frequentes** durante a fase (não só no fim) — o working tree nunca deve acumular mais de uma task sem commit.
+4. **Um chat por vez edita o mesmo arquivo.** Se há sessões paralelas, quem chega depois faz `git status`/`git log` antes de escrever.
+5. **Sem commit inicial nenhum trabalho existe**: manter o repositório sempre commitável (lint/typecheck/test verdes).
 
 ## 8.1 Ferramentas MCP disponíveis
 
@@ -151,7 +165,7 @@ Configurados em `opencode.json` (raiz do projeto):
 - **chrome-devtools** (`chrome-devtools-mcp`) — inspecionar console, rede e performance de um Chrome controlado.
 - **postgres** (`@modelcontextprotocol/server-postgres`, usa `${DATABASE_URL}`) — inspeção do schema e queries no Postgres do projeto. Somente leitura analítica; migrações continuam via Prisma.
 - **memory** / **sequential-thinking** — utilitários de raciocínio/memória entre sessões.
-- **github** (oficial, remoto) — **desabilitado** até definir `GITHUB_TOKEN`; habilitar apenas com token de escopo mínimo (read).
+- **github** (oficial, remoto) — habilitado via `{env:GITHUB_TOKEN}` (PAT read-only definido como env var de usuário do Windows; nunca commitar o token).
 
 Acesso a arquivos e shell já é nativo dos agentes (não requer MCP).
 

@@ -50,17 +50,19 @@ export class IngestionPipeline {
     const e = parsed.data;
     const key = dedupKey(e);
     const outcome = await this.store.checkAndPersist(key, {
-      eventId: e.event_id,
-      correlationId: e.correlation_id,
-      source: e.source,
-      wallet: e.wallet,
       signature: e.signature,
       instructionIndex: e.instruction_index,
-      slot: e.slot,
-      blockTime: e.block_time,
-      detectedAt: new Date(e.detected_at),
-      tokenMint: e.token_mint,
-      action: e.action,
+      wallet: e.wallet,
+      eventType: e.action,
+      slot: BigInt(e.slot),
+      blockTime: e.block_time !== null ? new Date(e.block_time * 1000) : null,
+      payload: {
+        event_id: e.event_id,
+        correlation_id: e.correlation_id,
+        source: e.source,
+        detected_at: e.detected_at,
+        token_mint: e.token_mint,
+      } as Record<string, string | number>,
     });
 
     if (outcome.status === 'error') {

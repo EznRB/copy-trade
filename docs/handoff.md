@@ -1,29 +1,40 @@
-# Handoff entre chats/sessões
+# Handoff — Estado do Projeto
 
-> Protocolo: AGENTS.md §8.1. Bloco mais recente no topo.
+> Protocolo §8.1 do AGENTS.md: este arquivo é a memória entre sessões. Todo chat novo DEVE ler: AGENTS.md → docs/roadmap.md → docs/architecture/decision-log.md → este arquivo.
 
 ---
 
-## 2026-09-22 — Setup de ambiente + F1 em andamento
+## 2026-09-22 — FASE 1 CONCLUÍDA (branch `sprint/f1-postgres-live`)
 
-### Feito (chat de tooling/orquestração)
-- Dependências F1 instaladas em `@ct/solana`: `@solana/kit@6.10`, `helius-sdk@3.2`, `@triton-one/yellowstone-grpc@7.0`, `@solana-program/token`, `@solana-program/system`.
-- ADRs 011–014 no `docs/architecture/decision-log.md` (stack kit/helius/grpc; pump.fun = IDL vendored; Jupiter/DexScreener/Birdeye/RugCheck = clientes HTTP internos com zod; política de MCPs).
-- Fix de 2 erros de typecheck pré-existentes em `packages/solana/src` (`rpc-provider.ts`, `helius-provider.ts`).
-- MCPs configurados no `opencode.json` (9/9 conectados): context7, github (via `{env:GITHUB_TOKEN}`, env var de usuário do Windows), solana, helius-docs, sequential-thinking, memory, playwright, chrome-devtools, postgres (connection string literal de dev).
-- `.env` criado com `HELIUS_API_KEY` validada contra mainnet (RPC, DAS, priority fee, enhanced tx `/v0/addresses/...`).
-- **Atenção:** chave Helius e token GitHub expostos no histórico de chat — rotação pendente.
-- Arquivo `scripts/ensure-watcher.ps1` criado por outra sessão (chat dev F1) — não auditado ainda.
+### O que foi feito (com SHAs)
 
-### Em andamento (chat de desenvolvimento F1)
-- Código F1 pronto e testado (28 testes verdes): `packages/solana` (providers, backoff) + `services/data-ingestion` (pipeline, normalizer, dedup-store).
-- **Pendente (gate F1):** rodar ingestão contra mainnet real + Postgres local; medir dedup/latência; persistir eventos; commitar.
+- `887e516` — ajustes de tooling herdados de sessão anterior (vitest 3, check-secrets em .mjs, opencode postgres MCP)
+- `6d984e2` — `.gitignore`: `*.tsbuildinfo`
+- `0b7f55e` — F1: subscrição via `INGESTION_WATCH_ADDRESSES`, entrypoint `main.ts`, alinhamento do pipeline ao schema real de `ObservedEvent` (signature/instructionIndex/wallet/eventType/slot/payload)
+- `609a1a6` — fix: endpoint WSS Helius correto (`mainnet.helius-rpc.com`, ADR-011); schema de env sem `.strict()` (ADR-012)
+- `ffc094c` — limpeza de artefatos locais
+
+### Gate F1 — APROVADO (evidência)
+
+- Smoke test contra mainnet (Helius WSS, fixture público = programa Pump.fun): **780.053 eventos persistidos em ~40 min**, dedup funcional (unique constraint rejeitando re-deliveries; zero colisões persistidas), zero trades.
+- Gates: `lint` 0 erros, `typecheck` 0 erros, `test` 34/34, `check:secrets` limpo.
+- Infra local: PostgreSQL instalado e rodando em localhost:5432; banco `copytrade` migrado (`000000000000_init`).
+
+### Em andamento / pendente
+
+- **F1.5 (próxima sprint):** enriquecimento via `getTransaction` — identificar a wallet do filtro `mentions`, classificar BUY/SELL, extrair `token_mint`/amounts. Hoje `eventType=UNKNOWN` e `wallet=UNKNOWN` para todos os eventos (FACT — ver limitação abaixo).
+- **Débitos aceitos:** (1) guard de instância única (dois processos rodaram por acidente — ADR-014); (2) política de retenção (568 MB em 40 min — ADR-014); (3) reconciliar endpoints: `SOLANA_RPC_WSS` deve apontar para o mesmo host documentado.
+- **Credenciais:** a Helius API key foi compartilhada em chat — **recomendado rotacionar** (dashboard.helius.dev) e atualizar apenas o `.env` local (nunca commitar).
+
+### Limitação arquitetural conhecida (não é bug)
+
+`logsSubscribe`/`logsNotification` não informa qual endereço do filtro `mentions` disparou o evento nem o `instruction_index`. Dedup atual é por `signature` (wallet=UNKNOWN, instruction_index=0). Correto para F1; a atribuição por wallet depende do enriquecimento (F1.5), momento em que a chave de dedup passa a ser significativa por wallet.
+
+### Processo (coordenação multi-chat)
+
+- Trabalho feito no worktree `../copytrade-wt-f1-postgres-live`, branch `sprint/f1-postgres-live`, seguindo §7.1.
+- Aguardando revisão autônoma (`docs/reviews/<sha>.md`) antes de merge em master.
 
 ### Próximo passo exato
-1. Chat dev F1: concluir gate F1 (eventos reais persistidos, dedup sob reconnect) e **commitar**.
-2. Após commit: revisão externa (chat de orquestração) contra os gates da F1.
-3. Só então abrir F2 (wallet monitor).
 
-### Regras novas relevantes
-- Nenhum threshold/config em código — sempre `@ct/config` + zod.
-- Yellowstone gRPC: sem binário nativo no Windows — usar client JS puro no dev; NAPI só no servidor Linux futuro.
+Criar sprint `f15-enrichment`: implementar `services/data-ingestion/src/enricher.ts` que, para cada evento persistido, chama `getTransaction` (via `RpcProvider` com failover) e preenche wallet/atores, action BUY/SELL e mint — com rate limiting e cache; testes unit + replay com fixtures de transações reais.

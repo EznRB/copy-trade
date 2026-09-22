@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "prisma:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema packages/database/prisma/schema.prisma",
-    "check:secrets": "powershell -File infrastructure/scripts/check-secrets.ps1",
+    "check:secrets": "node infrastructure/scripts/check-secrets.mjs",
     "check:security": "npm run check:secrets && npm audit --audit-level=high"
   },
   "devDependencies": {
@@ -31,7 +31,7 @@
     "fast-check": "^3.19.0",
     "prettier": "^3.3.0",
     "typescript": "^5.4.5",
-    "vitest": "^1.6.0"
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -56,7 +56,8 @@ describe('validação zod', () => {
     );
   });
 
-  it('chave desconhecida é rejeitada (strict)', () => {
-    expect(() => loadConfig({ ...baseEnv, SURPRISE: 'x' })).toThrowError(ConfigError);
+  it('chaves desconhecidas são ignoradas (env do OS contém muitas)', () => {
+    const cfg = loadConfig({ ...baseEnv, SURPRISE: 'x' });
+    expect(cfg.tradingMode).toBe('PAPER');
   });
 });

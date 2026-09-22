@@ -45,8 +45,13 @@ export const envSchema = z
     TELEGRAM_CHAT_ID: z.string().optional(),
 
     API_PORT: z.coerce.number().int().positive().default(3001),
-  })
-  .strict();
+
+    // Enderecos (wallets/programas) monitorados pelo data-ingestion (CSV). Opcional:
+    // ausente = pipeline sobe sem subscricao (util para testes locais).
+    INGESTION_WATCH_ADDRESSES: z.string().optional(),
+  });
+// NOTA: SEM .strict() — process.env contém dezenas de variáveis do OS; rejeitar
+// chaves desconhecidas impediria o boot de qualquer processo. Unknown keys são ignoradas.
 
 export type AppConfig = z.infer<typeof envSchema> & { tradingMode: TradingMode };
 

@@ -26,17 +26,12 @@ function makeMockRepo() {
 }
 
 const record = (sig: string, w = 'W', i = 0) => ({
-  eventId: `e-${sig}`,
-  correlationId: 'c',
-  source: 'test',
-  wallet: w,
   signature: sig,
   instructionIndex: i,
-  slot: 1,
+  wallet: w,
+  eventType: 'UNKNOWN',
+  slot: 1n,
   blockTime: null,
-  detectedAt: new Date(0),
-  tokenMint: 'UNKNOWN',
-  action: 'UNKNOWN',
 });
 
 describe('DedupStore', () => {

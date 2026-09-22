@@ -44,7 +44,7 @@
     },
     "postgres": {
       "type": "local",
-      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"],
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@localhost:5432/copytrade"],
       "enabled": true
     }
   },

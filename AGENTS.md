@@ -154,7 +154,9 @@ Sessões de IA têm contexto finito; a memória durável do projeto é o **repos
 4. **Um chat por vez edita o mesmo arquivo.** Se há sessões paralelas, quem chega depois faz `git status`/`git log` antes de escrever.
 5. **Sem commit inicial nenhum trabalho existe**: manter o repositório sempre commitável (lint/typecheck/test verdes).
 
-## 8.1 Ferramentas MCP disponíveis
+**Gate de segurança por fase:** nenhuma fase é considerada concluída sem que o orchestrator dispare uma sprint do red-team sobre o código novo da fase (ver `docs/security/red-team/README.md`). Fases com findings CRITICAL/HIGH em aberto não podem avançar. O que já roda de forma autônoma em todo push/PR: `check:security` (secrets + audit) no job **Security Gate** do CI; auditoria completa também roda semanalmente via schedule.
+
+## 8.2 Ferramentas MCP disponíveis
 
 Configurados em `opencode.json` (raiz do projeto):
 

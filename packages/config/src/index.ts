@@ -45,6 +45,10 @@ export const envSchema = z
     TELEGRAM_CHAT_ID: z.string().optional(),
 
     API_PORT: z.coerce.number().int().positive().default(3001),
+
+    // Enderecos (wallets/programas) monitorados pelo data-ingestion (CSV). Opcional:
+    // ausente = pipeline sobe sem subscricao (util para testes locais).
+    INGESTION_WATCH_ADDRESSES: z.string().optional(),
   })
   .strict();
 

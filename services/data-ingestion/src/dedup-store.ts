@@ -2,38 +2,37 @@
  * DedupStore — deduplicação em duas camadas (AGENTS.md §2.6 idempotência).
  *
  * (a) Cache em memória (LRU simples, limite configurável) — fast-path.
- * (b) Banco: insert com @@unique([signature, instruction_index, wallet]).
- *     Conflito de unique constraint = duplicata. A camada (b) é a AUTORIDADE:
+ * (b) Banco: insert com @@unique([signature, instructionIndex, wallet]).
+ *     Conflito (Prisma P2002) = duplicata. A camada (b) é a AUTORIDADE:
  *     garante idempotência mesmo entre restarts do processo.
  *
- * Erros: apenas o erro de unique constraint (Prisma P2002) é classificado
- * como duplicata. Qualquer outro erro de persistência é DATABASE_ERROR.
+ * Erros: apenas P2002 é classificado como duplicata. Qualquer outro erro de
+ * persistência é DATABASE_ERROR.
  */
+
+/** JSON recursivo compatível com Prisma.InputJsonValue (mantém o package desacoplado). */
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
+/** Shape alinhado ao model ObservedEvent real (packages/database/prisma/schema.prisma). */
+export interface ObservedEventInsertData {
+  signature: string;
+  instructionIndex: number;
+  wallet: string;
+  eventType: string;
+  slot?: bigint | null;
+  blockTime?: Date | null;
+  /** Prisma Json fields não aceitam null direto (usar Prisma.JsonNull); omitimos quando ausente. */
+  payload?: Exclude<JsonValue, null>;
+}
 
 /** Interface mínima do repositório (prisma.observedEvent). */
 export interface ObservedEventRepo {
-  create(data: {
-    data: {
-      eventId: string;
-      correlationId: string;
-      source: string;
-      wallet: string;
-      signature: string;
-      instructionIndex: number;
-      slot: number;
-      blockTime: number | null;
-      detectedAt: Date;
-      tokenMint: string;
-      action: string;
-    };
-  }): Promise<unknown>;
+  create(args: { data: ObservedEventInsertData }): Promise<unknown>;
 }
 
 export function isUniqueConstraintError(err: unknown): boolean {
   return (
-    typeof err === 'object' &&
-    err !== null &&
-    (err as { code?: string }).code === 'P2002'
+    typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002'
   );
 }
 
@@ -71,10 +70,7 @@ export class DedupStore {
    * Verifica e persiste. Retorna 'duplicate' se a dedupKey já existe
    * (cache ou unique constraint do banco).
    */
-  async checkAndPersist(
-    key: string,
-    record: Parameters<ObservedEventRepo['create']>[0]['data'],
-  ): Promise<DedupOutcome> {
+  async checkAndPersist(key: string, record: ObservedEventInsertData): Promise<DedupOutcome> {
     // Fast-path: memória (só evita trabalho; NUNCA é a autoridade final).
     if (this.seen.has(key)) {
       this.counters.deduplicated++;

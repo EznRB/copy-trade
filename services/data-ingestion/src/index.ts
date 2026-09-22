@@ -59,6 +59,20 @@ export async function start(): Promise<void> {
   });
   await provider.connect();
 
+  // Subscrição explícita: sem endereços configurados o pipeline sobe mas não observa nada.
+  const watch = (config.INGESTION_WATCH_ADDRESSES ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (watch.length === 0) {
+    logger.warn('INGESTION_WATCH_ADDRESSES vazio — nenhuma subscrição ativa', {
+      errorClass: 'CONFIG_ERROR',
+    });
+  } else {
+    await provider.subscribeWallets(watch);
+    logger.info('subscrições ativas', { watchCount: watch.length });
+  }
+
   const shutdown = async (signal: string): Promise<void> => {
     logger.info('shutdown iniciado', { signal });
     await pipeline.stop(); // drain: para de aceitar novos, stats finais

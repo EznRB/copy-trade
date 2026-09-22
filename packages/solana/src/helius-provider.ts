@@ -2,7 +2,7 @@
  * HeliusProvider — stream de transações via WebSocket.
  *
  * FACT (documentação Helius Enhanced Websockets): endpoint
- *   wss://atlas-mainnet.helius-rpc.com?api-key=<HELIUS_API_KEY>
+ *   wss://mainnet.helius-rpc.com/?api-key=<HELIUS_API_KEY>
  * aceita os mesmos métodos de subscription do WSS padrão da Solana
  * (logsSubscribe / logsUnsubscribe), com filtro `mentions` por endereço.
  * Fallback: sem API key, conecta no WSS padrão da Solana
@@ -52,7 +52,9 @@ export interface HeliusProviderOptions {
   webSocketFactory?: (url: string) => WebSocket;
 }
 
-const HELIUS_WSS_BASE = 'wss://atlas-mainnet.helius-rpc.com';
+// FACT (docs Helius, verificado em 2026-09): WSS correto é mainnet.helius-rpc.com
+// ("LaserStream WebSocket"). wss://atlas-mainnet... retorna HTTP 403.
+const HELIUS_WSS_BASE = 'wss://mainnet.helius-rpc.com';
 const SOLANA_PUBLIC_WSS = 'wss://api.mainnet-beta.solana.com';
 
 interface LogsNotificationValue {

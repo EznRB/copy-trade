@@ -49,8 +49,9 @@ export const envSchema = z
     // Enderecos (wallets/programas) monitorados pelo data-ingestion (CSV). Opcional:
     // ausente = pipeline sobe sem subscricao (util para testes locais).
     INGESTION_WATCH_ADDRESSES: z.string().optional(),
-  })
-  .strict();
+  });
+// NOTA: SEM .strict() — process.env contém dezenas de variáveis do OS; rejeitar
+// chaves desconhecidas impediria o boot de qualquer processo. Unknown keys são ignoradas.
 
 export type AppConfig = z.infer<typeof envSchema> & { tradingMode: TradingMode };
 

@@ -1,0 +1,23 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/types" },
+    { "path": "packages/config" },
+    { "path": "packages/logging" },
+    { "path": "packages/metrics" },
+    { "path": "packages/database" },
+    { "path": "packages/solana" },
+    { "path": "packages/dex" },
+    { "path": "packages/pumpfun" },
+    { "path": "backtester" },
+    { "path": "services/data-ingestion" },
+    { "path": "services/wallet-monitor" },
+    { "path": "services/token-monitor" },
+    { "path": "services/feature-engine" },
+    { "path": "services/signal-engine" },
+    { "path": "services/risk-engine" },
+    { "path": "services/execution-engine" },
+    { "path": "services/position-manager" },
+    { "path": "services/notification-service" }
+  ]
+}

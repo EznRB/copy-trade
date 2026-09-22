@@ -1,0 +1,60 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    },
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": { "Authorization": "Bearer ${GITHUB_TOKEN}" },
+      "enabled": false
+    },
+    "solana": {
+      "type": "remote",
+      "url": "https://mcp.solana.com/mcp",
+      "enabled": true
+    },
+    "helius-docs": {
+      "type": "remote",
+      "url": "https://www.helius.dev/docs/mcp",
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": true
+    },
+    "memory": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "@playwright/mcp@latest"],
+      "enabled": true
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "chrome-devtools-mcp@latest"],
+      "enabled": true
+    },
+    "postgres": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"],
+      "enabled": true
+    }
+  },
+  "permission": {
+    "bash": {
+      "npm *": "allow",
+      "git status": "allow",
+      "git diff *": "allow",
+      "git log *": "allow",
+      "*": "ask"
+    }
+  }
+}

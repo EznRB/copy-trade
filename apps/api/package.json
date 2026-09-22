@@ -1,0 +1,19 @@
+{
+  "name": "@ct/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@ct/types": "*",
+    "@ct/config": "*",
+    "@ct/logging": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

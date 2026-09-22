@@ -1,0 +1,42 @@
+# docker-compose.yml
+#
+# USO APENAS NO SERVIDOR 24/7 FUTURO.
+# Dev local é NATIVO (virtualização desligada nesta máquina):
+# Postgres local é instalado e rodado nativamente, não via este arquivo.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ct}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD via environment/secret, never hardcode}
+      POSTGRES_DB: ${POSTGRES_DB:-copytrade}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-ct}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Placeholder de serviço da app — descomentar quando existir Dockerfile validado.
+  # Nunca passar private keys/seed phrases via environment aqui; usar secrets do host.
+  # service-example:
+  #   build:
+  #     context: ..
+  #     dockerfile: infrastructure/docker/Dockerfile.service
+  #     args:
+  #       SERVICE: services/ingestion
+  #   environment:
+  #     NODE_ENV: production
+  #     DATABASE_URL: postgres://${POSTGRES_USER:-ct}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-copytrade}
+  #     TRADING_MODE: PAPER
+  #     TRADING_KILL_SWITCH: "true"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+volumes:
+  pgdata:

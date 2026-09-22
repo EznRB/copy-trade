@@ -1,0 +1,30 @@
+{
+  "name": "@ct/solana",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@ct/types": "0.1.0",
+    "@solana-program/system": "^0.12.2",
+    "@solana-program/token": "^0.13.0",
+    "@solana/kit": "^6.10.0",
+    "@triton-one/yellowstone-grpc": "^7.0.1",
+    "helius-sdk": "^3.2.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,314 @@
+// @ct/database — Prisma schema v1 (Fases 1–9)
+// Fonte de verdade para persistência. Nunca adicionar secrets aqui (somente env refs).
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------------------------
+// Wallets (Fase 2)
+// ---------------------------------------------------------------------------
+
+model Wallet {
+  id             String   @id @default(cuid())
+  address        String   @unique
+  label          String?
+  classification String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  metrics        WalletMetric[]
+  trades         WalletTrade[]
+  clusterMembers WalletClusterMember[]
+  // ObservedEvent usa `wallet` como address (String), não FK — sem relation aqui.
+}
+
+model WalletMetric {
+  id               String   @id @default(cuid())
+  walletId         String
+  wallet           Wallet   @relation(fields: [walletId], references: [id])
+  window           String // ex.: "7d", "30d"
+  tradeCount       Int      @default(0)
+  winRate          Float?
+  grossPnlLamports BigInt   @default(0)
+  netPnlLamports   BigInt   @default(0)
+  avgHoldSeconds   Int?
+  computedAt       DateTime @default(now())
+
+  @@index([walletId, window])
+}
+
+model WalletTrade {
+  id                 String   @id @default(cuid())
+  walletId           String
+  wallet             Wallet   @relation(fields: [walletId], references: [id])
+  mint               String
+  side               String // "buy" | "sell"
+  signature          String
+  instructionIndex   Int
+  amountInLamports   BigInt?
+  amountOutLamports  BigInt?
+  executedAt         DateTime
+
+  @@unique([signature, instructionIndex, walletId])
+}
+
+model WalletCluster {
+  id          String   @id @default(cuid())
+  name        String?
+  method      String // ex.: "funding_source", "heuristic"
+  createdAt   DateTime @default(now())
+
+  members     WalletClusterMember[]
+}
+
+model WalletClusterMember {
+  id        String        @id @default(cuid())
+  clusterId String
+  cluster   WalletCluster @relation(fields: [clusterId], references: [id])
+  walletId  String
+  wallet    Wallet        @relation(fields: [walletId], references: [id])
+
+  @@unique([clusterId, walletId])
+}
+
+// ---------------------------------------------------------------------------
+// Tokens (Fase 3)
+// ---------------------------------------------------------------------------
+
+model Token {
+  id        String   @id @default(cuid())
+  mint      String   @unique
+  symbol    String?
+  name      String?
+  creatorId String?
+  creator   Creator?  @relation(fields: [creatorId], references: [id])
+  createdAt DateTime @default(now())
+
+  metrics    TokenMetric[]
+  riskEvents TokenRiskEvent[]
+}
+
+model TokenMetric {
+  id               String   @id @default(cuid())
+  tokenId          String
+  token            Token    @relation(fields: [tokenId], references: [id])
+  liquidityLamports BigInt?
+  holderCount      Int?
+  topHolderPct     Float?
+  computedAt       DateTime @default(now())
+
+  @@index([tokenId, computedAt])
+}
+
+model TokenRiskEvent {
+  id        String   @id @default(cuid())
+  tokenId   String
+  token     Token    @relation(fields: [tokenId], references: [id])
+  kind      String // ex.: "bundle", "dev_dump", "honeypot_suspect"
+  severity  String // "info" | "warn" | "critical"
+  details   Json?
+  detectedAt DateTime @default(now())
+}
+
+model Creator {
+  id        String   @id @default(cuid())
+  address   String   @unique
+  riskScore Float?
+  createdAt DateTime @default(now())
+
+  tokens    Token[]
+}
+
+// ---------------------------------------------------------------------------
+// Ingestion (Fase 1)
+// ---------------------------------------------------------------------------
+
+model ObservedEvent {
+  id               String   @id @default(cuid())
+  signature        String
+  instructionIndex Int
+  wallet           String
+  eventType        String
+  slot             BigInt?
+  blockTime        DateTime?
+  payload          Json?
+  receivedAt       DateTime @default(now())
+
+  // Chave de dedup (idempotência — AGENTS.md regra 6)
+  @@unique([signature, instructionIndex, wallet])
+}
+
+// ---------------------------------------------------------------------------
+// Signals (Fases 4–7)
+// ---------------------------------------------------------------------------
+
+model Signal {
+  id              String   @id @default(cuid())
+  correlationId   String
+  strategyId      String
+  strategyVersion String
+  mint            String
+  direction       String // "buy" | "sell"
+  score           Float?
+  status          String   @default("pending") // pending | approved | vetoed | expired
+  createdAt       DateTime @default(now())
+
+  features        SignalFeature[]
+  orders          Order[]
+
+  @@index([strategyId, strategyVersion, createdAt])
+}
+
+model SignalFeature {
+  id        String @id @default(cuid())
+  signalId  String
+  signal    Signal @relation(fields: [signalId], references: [id])
+  name      String
+  value     Float
+
+  @@unique([signalId, name])
+}
+
+// ---------------------------------------------------------------------------
+// Execution (Fases 9–10) — nunca habilitar LIVE sem aprovação humana
+// ---------------------------------------------------------------------------
+
+model Order {
+  id            String   @id @default(cuid())
+  correlationId String
+  signalId      String?
+  signal        Signal?  @relation(fields: [signalId], references: [id])
+  mode          String // "PAPER" | "SHADOW" | "LIVE"
+  mint          String
+  side          String
+  amountLamports BigInt
+  status        String   @default("created") // created | submitted | confirmed | failed | vetoed
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions  Transaction[]
+  positions     Position[]
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  correlationId String
+  orderId       String?
+  order         Order?   @relation(fields: [orderId], references: [id])
+  signature     String?  @unique
+  status        String // "built" | "sent" | "confirmed" | "failed"
+  feeLamports   BigInt?
+  priorityFeeLamports BigInt?
+  tipLamports   BigInt?
+  sentAt        DateTime?
+  confirmedAt   DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model Position {
+  id            String   @id @default(cuid())
+  correlationId String
+  orderId       String?
+  order         Order?   @relation(fields: [orderId], references: [id])
+  mint          String
+  status        String   @default("open") // open | closed
+  openedAt      DateTime @default(now())
+  closedAt      DateTime?
+  grossPnlLamports BigInt?
+  netPnlLamports   BigInt?
+}
+
+model ExecutionMetric {
+  id            String   @id @default(cuid())
+  correlationId String
+  name          String
+  value         Float
+  recordedAt    DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Backtest / ML (Fases 5–7)
+// ---------------------------------------------------------------------------
+
+model BacktestRun {
+  id              String   @id @default(cuid())
+  strategyId      String
+  strategyVersion String
+  params          Json?
+  startedAt       DateTime @default(now())
+  finishedAt      DateTime?
+  status          String   @default("running")
+
+  trades          BacktestTrade[]
+}
+
+model BacktestTrade {
+  id           String      @id @default(cuid())
+  runId        String
+  run          BacktestRun @relation(fields: [runId], references: [id])
+  mint         String
+  entryAt      DateTime
+  exitAt       DateTime?
+  grossPnlLamports BigInt?
+  netPnlLamports   BigInt?
+}
+
+model ModelVersion {
+  id                  String   @id @default(cuid())
+  modelId             String
+  modelVersion        String
+  featureSchemaVersion String
+  artifactUri         String?
+  trainedAt           DateTime @default(now())
+
+  predictions         ModelPrediction[]
+
+  @@unique([modelId, modelVersion])
+}
+
+model ModelPrediction {
+  id             String       @id @default(cuid())
+  modelVersionId String
+  modelVersion   ModelVersion @relation(fields: [modelVersionId], references: [id])
+  correlationId  String?
+  inputHash      String?
+  output         Json
+  predictedAt    DateTime     @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Sistema / Risco / Auditoria (transversal)
+// ---------------------------------------------------------------------------
+
+model SystemEvent {
+  id        String   @id @default(cuid())
+  kind      String
+  severity  String   @default("info")
+  message   String
+  details   Json?
+  createdAt DateTime @default(now())
+}
+
+model RiskEvent {
+  id            String   @id @default(cuid())
+  correlationId String?
+  kind          String // ex.: "veto", "circuit_breaker", "kill_switch"
+  reason        String
+  details       Json?
+  createdAt     DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  target    String?
+  details   Json?
+  createdAt DateTime @default(now())
+}

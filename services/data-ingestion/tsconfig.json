@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "composite": true
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/types" },
+    { "path": "../../packages/config" },
+    { "path": "../../packages/logging" },
+    { "path": "../../packages/database" },
+    { "path": "../../packages/solana" }
+  ]
+}

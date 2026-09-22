@@ -1,0 +1,51 @@
+# Dockerfile.service
+#
+# USO APENAS NO SERVIDOR 24/7 FUTURO.
+# Dev local é NATIVO (virtualização desligada nesta máquina).
+# Não rode docker localmente para desenvolvimento.
+#
+# Build de exemplo (no futuro, no servidor):
+#   docker build -f infrastructure/docker/Dockerfile.service \
+#     --build-arg SERVICE=services/ingestion -t ct/ingestion:0.1.0 .
+
+# ---------- deps ----------
+FROM node:20-bookworm-slim AS deps
+WORKDIR /app
+ARG SERVICE
+# Apenas manifests para cache de dependências
+COPY package.json package-lock.json* tsconfig.base.json ./
+COPY ${SERVICE}/package.json ${SERVICE}/package.json
+COPY packages/types/package.json packages/types/package.json
+COPY packages/config/package.json packages/config/package.json
+RUN npm ci --omit=dev=false --workspace ${SERVICE} --include-workspace-root=false || true
+
+# ---------- build ----------
+FROM node:20-bookworm-slim AS build
+WORKDIR /app
+ARG SERVICE
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build --workspace ${SERVICE}
+
+# ---------- runtime ----------
+FROM node:20-bookworm-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+
+# NUNCA secrets na imagem: secrets só via env/secret manager em runtime.
+# .env e chaves privadas são proibidos aqui. (.dockerignore deve excluir .env*)
+
+RUN groupadd --system ct && useradd --system --gid ct ct
+
+ARG SERVICE
+COPY --from=build --chown=ct:ct /app/package.json ./
+COPY --from=build --chown=ct:ct /app/node_modules ./node_modules
+COPY --from=build --chown=ct:ct /app/${SERVICE}/dist ./service/dist
+
+USER ct
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+CMD ["node", "service/dist/index.js"]

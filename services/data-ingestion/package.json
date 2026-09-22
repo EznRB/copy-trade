@@ -1,0 +1,23 @@
+{
+  "name": "@ct/service-data-ingestion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@ct/types": "*",
+    "@ct/config": "*",
+    "@ct/logging": "*",
+    "@ct/database": "*",
+    "@ct/solana": "*",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "fast-check": "^3.19.0",
+    "vitest": "^1.5.0"
+  }
+}

@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+coverage/
+.next/
+out/
+
+# Environment & secrets — NUNCA commitar
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+keypair*.json
+id.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+ml/models/*.pkl
+ml/models/*.joblib
+
+# Logs / dados locais
+logs/
+*.log
+data/raw/
+data/local/
+
+# Prisma local
+packages/database/prisma/*.db
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

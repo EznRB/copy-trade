@@ -1,0 +1,39 @@
+{
+  "name": "solana-copytrade-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Solana Smart-Money Intelligence + Pump.fun Copy Trading Engine (PAPER-first)",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*",
+    "backtester"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -b --pretty",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "prisma:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema packages/database/prisma/schema.prisma",
+    "check:secrets": "powershell -File infrastructure/scripts/check-secrets.ps1",
+    "check:security": "npm run check:secrets && npm audit --audit-level=high"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "fast-check": "^3.19.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

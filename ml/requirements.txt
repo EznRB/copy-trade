@@ -1,0 +1,9 @@
+# ML stack (Fase 7+) — Python 3.11+
+# Pins mínimos razoáveis; revisar antes de travar versões exatas no lockfile.
+pandas>=2.1
+numpy>=1.26
+scikit-learn>=1.4
+xgboost>=2.0
+lightgbm>=4.0
+pytest>=8.0
+hypothesis>=6.100

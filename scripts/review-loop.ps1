@@ -17,13 +17,15 @@
 .PARAMETERS
   -IntervalSeconds : intervalo do loop (default 60)
   -BranchPatterns  : branches monitoradas (default sprint/*, feat/*, task/*)
-  -AutoFix         : tentar corrigir reviews rejeitados (default $true)
+  -AutoFix         : DESATIVADO por padrao desde o protocolo de 4 chats
+                     (docs/operations/phase-pipeline.md): REVIEW nunca corrige
+                     codigo; REJEITADO volta ao DEV. Manter $false.
   -Once            : executa uma passada e sai (util para teste)
 #>
 param(
     [int]$IntervalSeconds = 60,
     [string[]]$BranchPatterns = @('sprint/*', 'feat/*', 'task/*'),
-    [bool]$AutoFix = $true,
+    [bool]$AutoFix = $false,
     [switch]$Once
 )
 
@@ -104,7 +106,7 @@ Seguida de lista de achados (cada um com severidade CRITICAL/HIGH/MEDIUM/LOW).
     $prev = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'  # stderr do CLI nao vira excecao
     try {
-        $out = opencode run --agent code-reviewer $prompt 2>&1 | Out-String
+        $out = opencode run -m opencode/big-pickle --agent code-reviewer $prompt 2>&1 | Out-String
     } finally {
         $ErrorActionPreference = $prev
     }
@@ -123,7 +125,7 @@ function Invoke-AutoFix([string]$sha, [string]$branch, [string]$reviewFile) {
     $ErrorActionPreference = 'Continue'
     try {
         npm install --silent 2>&1 | Out-Null
-        $out = opencode run $prompt -f $reviewFile 2>&1 | Out-String
+        $out = opencode run -m opencode/big-pickle $prompt -f $reviewFile 2>&1 | Out-String
     } finally {
         $ErrorActionPreference = $prev
         Pop-Location

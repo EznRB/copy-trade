@@ -10,7 +10,7 @@ A fonte de verdade é o **git local** — não há IPC entre chats.
   1. Roda gates: `npm run lint`, `npm run typecheck`, `npm test`.
   2. Invoca `opencode run --agent code-reviewer` (headless) para revisão adversarial do diff.
   3. Grava veredito em `docs/reviews/<sha>.md` e commita o artefato no master.
-  4. Se REJEITADO: tenta correção automática em branch `review-fix/<branch>` (via worktree temporário `.review-wt`), **nunca** na branch do produtor. Correções seguem à revisão humana/produtor para merge.
+  4. Se REJEITADO: **apenas registra** — o REVIEW nunca corrige código (ver `docs/operations/phase-pipeline.md`, anti-padrão "REVIEW corrigindo código"); a correção volta ao DEV. (Autofix existe no script mas fica `-AutoFix:$false` por padrão; uso exige autorização explícita do dono.)
 
 ## Arquivos de estado
 

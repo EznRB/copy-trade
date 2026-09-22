@@ -42,3 +42,6 @@ Thumbs.db
 !.vscode/extensions.json
 
 .review-wt/
+
+# TypeScript build cache
+*.tsbuildinfo

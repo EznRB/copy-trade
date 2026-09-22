@@ -1,6 +1,6 @@
 ---
 description: Revisor adversarial: tenta quebrar o codigo. Nao implementa. Veredito APROVADO/REJEITADO com achados.
-mode: subagent
+mode: all
 tools:
   write: true
   edit: true

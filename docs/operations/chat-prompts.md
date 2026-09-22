@@ -48,12 +48,17 @@ REGRAS ABSOLUTAS:
 >
 > Confirme o entendimento repetindo o gate da fase e a branch que vai usar.
 
-### MSG 2 — Fechamento de sprint (quando DEV avisar) → você faz sozinho
+### MSG 2 — Fechamento de sprint (quando DEV avisar) → delegue ao CÉREBRO
 
-1. `git log --oneline sprint/<nome>` — liste os commits.
-2. Abra `docs/reviews/` — **cada SHA precisa de um `<sha>.md` com APROVADO**.
-3. Algum REJEITADO → **não mergeie**; mande ao DEV: *"Commit <sha> rejeitado. Leia docs/reviews/<sha>.md, corrija na sua branch (ou aceite review-fix/) e recommite."*
-4. Tudo aprovado → merge: `git merge --no-ff sprint/<nome> -m "merge: F<N> <slug> (revisado)"` no master, `git push`.
+Você NÃO precisa fazer manualmente. Mande ao chat CÉREBRO:
+
+> O DEV fechou a sprint `sprint/<nome>` da F<N>. Roda o gate de merge e, se tudo aprovado, integra no master.
+
+O CÉREBRO executa `scripts/merge-sprint.ps1 -Branch sprint/<nome> [-Push]`, que faz **mecanicamente**: lista os commits da sprint → exige `docs/reviews/<sha>.md` com APROVADO para **cada um** → aborta se faltar review ou houver REJEITADO → merge `--no-ff` → roda lint/typecheck/test no resultado. Falha em qualquer ponto = sem merge, e a correção volta ao DEV:
+
+> "Commit <sha> rejeitado/sem review. Leia `docs/reviews/<sha>.md`, corrija na sua branch (ou aceite `review-fix/`) e recommite."
+
+Se você quiser fazer sozinho mesmo assim, basta rodar o mesmo script num terminal.
 
 ### MSG 3 — Auditoria de segurança → chat SEC
 
@@ -77,12 +82,11 @@ REGRAS ABSOLUTAS:
 
 ## 2. Tabela anti-esquecimento (cole na parede)
 
-| Momento | Quem age | Mensagem |
+| Momento | Quem age | Mensagem/ação |
 |---|---|---|
 | Vou começar a fase F<N> | DONO → DEV | MSG 1 |
-| DEV disse "terminei" | DONO verifica `docs/reviews/` | MSG 2 (sem chat) |
-| Sprint toda APROVADA | DONO mergeia master | comando do MSG 2 |
-| Merge feito | DONO → SEC | MSG 3 |
+| DEV disse "terminei" | DONO → CÉREBRO | MSG 2 (delegada; script `merge-sprint.ps1`) |
+| Merge OK | DONO → SEC | MSG 3 |
 | SEC LIBEROU | DONO → CÉREBRO | MSG 4 |
 | Abrir chat novo | DONO → chat novo | MSG 5 |
 

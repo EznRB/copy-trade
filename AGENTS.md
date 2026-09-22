@@ -102,6 +102,40 @@ Os agentes especializados estão definidos em `.agents/*.md` (e `.opencode/agent
 - risk-security pode vetar qualquer entrega em qualquer fase.
 - Nenhum agente altera `MAX_*`, `TRADING_MODE` ou `LIVE_TRADING_ENABLED` sem aprovação humana; mudanças de config de risco exigem audit log.
 
+## 7.1 FLUXO OBRIGATÓRIO DE TRABALHO — PIPELINE DE REVISÃO AUTÔNOMA (multi-chat)
+
+> **Vigente desde o commit `f94c78a`. Todo chat produtor DEVE seguir este fluxo. Não é opcional.**
+
+Este repositório opera com **múltiplos chats de IA em paralelo**, coordenados por um **pipeline de revisão autônomo**. A coordenação é feita exclusivamente **via git local** (branches + `docs/reviews/`). Não existe comunicação direta entre chats.
+
+### O que o chat PRODUTOR deve fazer (isso significa VOCÊ, se está implementando código)
+
+1. **NUNCA trabalhe diretamente no `master`** (nem no working tree principal `copytrade 2/`). Editar arquivos soltos no master sem commit é a forma errada — suas mudanças ficam invisíveis ao revisor e arriscam ser perdidas.
+2. Antes de começar uma sprint/task, crie seu ambiente isolado:
+
+   ```powershell
+   powershell -File scripts/start-sprint-worktree.ps1 -Name <nome-da-task>
+   ```
+
+   Isso cria o diretório `../copytrade-wt-<nome-da-task>` na branch `sprint/<nome-da-task>`. **Trabalhe inteiramente dentro desse diretório.**
+3. A cada task concluída (gates verdes: `npm run lint`, `npm run typecheck`, `npm test`), **commite na sua branch** `sprint/<nome>` com mensagem convencional (`feat:`, `fix:`, `test:`, ...). Commits pequenos e frequentes — o revisor processa commit a commit.
+4. Aguarde a revisão: o watcher autônomo (`scripts/review-loop.ps1`, rodando num terminal dedicado na raiz) detecta cada commit novo em até ~60s e publica o veredito em `docs/reviews/<sha>.md` no master.
+5. Ao finalizar a fase/sprint, avise o usuário: a integração (merge da branch em master) é feita **somente após todos os commits da branch estarem APROVADOS** em `docs/reviews/`.
+
+### Como ler o resultado da revisão
+
+- `docs/reviews/<sha>.md` — veredito `APROVADO` ou `REJEITADO` + achados com severidade.
+- `docs/reviews/state.json` — SHAs já processados (idempotência; nunca editar manualmente).
+- Se REJEITADO: pode existir uma tentativa de correção automática na branch `review-fix/<sua-branch>`. O produtor revisa essa branch, aceita o que fizer sentido via cherry-pick/merge para a própria branch, e commita o restante da correção.
+
+### Regras duras do pipeline
+
+1. O revisor **nunca** commita na branch do produtor e nunca modifica código do produtor.
+2. O auto-fix vive apenas em `review-fix/*` — nunca em `sprint/*` nem em `master`.
+3. Commits cujo veredito é REJEITADO **não podem ser mergeados** em master sem correção + nova revisão aprovada.
+4. Nenhum chat (produtor ou revisor) altera `TRADING_MODE`, `LIVE_TRADING_ENABLED` ou constantes `MAX_*` — permanece regra inviolável.
+5. Detalhe operacional completo: `docs/reviews/README.md`.
+
 ## 8. Gates de fase (resumo — detalhe em `docs/roadmap.md`)
 
 F0 scaffold → F1 ingestion → F2 wallets → F3 tokens → F4 copyability → F5 backtest → F6 paper → F7 ML → F8 shadow → F9 execution → F10 live controlado. **Nunca pular fases. Nunca pular para live.**

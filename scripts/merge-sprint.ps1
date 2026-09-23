@@ -25,6 +25,12 @@ if ($LASTEXITCODE -ne 0) { Write-Error "Branch '$Branch' nao existe."; exit 2 }
 
 git fetch --all --quiet 2>$null
 
+# Anti-race (incidente 2026-09-23): o watcher pode atualizar vereditos DURANTE o merge.
+# Sempre sincronizar master com origin ANTES de ler docs/reviews/.
+git checkout master --quiet
+git pull --rebase origin master --quiet
+if ($LASTEXITCODE -ne 0) { Write-Error "git pull master falhou. Resolva e tente de novo."; exit 2 }
+
 # Commits da branch que ainda nao estao no master
 $commits = git log --format="%H" master..$Branch
 if (-not $commits) { Write-Output "Nada a mergear: '$Branch' ja esta contida em master."; exit 0 }
@@ -38,11 +44,27 @@ foreach ($sha in $commits) {
         continue
     }
     $content = Get-Content $review -Raw
-    if ($content -match 'APROVADO') {
+    # O veredito que vale eh o ULTIMO do arquivo (watcher pode re-revisar).
+    # Formatos observados: "Veredito: **APROVADO**" / "VERDICT: REJEITADO".
+    $verdicts = [regex]::Matches($content, '(?i)veredi[ck]to:\s*\**([A-Z]+)\**')
+    $last = if ($verdicts.Count -gt 0) { $verdicts[$verdicts.Count - 1].Groups[1].Value.ToUpper() } else { '' }
+    if ($last -eq 'APROVADO') {
         Write-Output "  [APROVADO] $($sha.Substring(0,8))"
     } else {
-        Write-Output "  [REJEITADO/INDEFINIDO] $($sha.Substring(0,8)) -> ver $review"
+        Write-Output "  [REJEITADO/INDEFINIDO] $($sha.Substring(0,8)) (ultimo veredito: '$last') -> ver $review"
         $fail = $true
+    }
+}
+
+# Bloqueio adicional: consultar state.json do watcher (lista "rejected")
+$statePath = 'docs/reviews/state.json'
+if (Test-Path $statePath) {
+    $state = Get-Content $statePath -Raw | ConvertFrom-Json
+    foreach ($sha in $commits) {
+        if ($state.rejected -contains $sha) {
+            Write-Output "  [REJEITADO-via-state] $($sha.Substring(0,8))"
+            $fail = $true
+        }
     }
 }
 

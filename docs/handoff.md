@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-09-23 — INCIDENTE: merge com commit REJEITADO (race no gate) + fixes pendentes
+
+### O que aconteceu
+- Sprint `sprint/f1-security-fixes` mergeada em `c1430a4`. Os fixes reais estão todos em `ea88b46` (APROVADO). O tip `19ffacc` era um **commit vazio** com mensagem "fix RT-005" — o watcher primeiro aprovou, depois re-revisou como **REJEITADO** (`docs/reviews/19ffacc…md`), mas o `merge-sprint.ps1` leu o veredito antes do flip (race). Nenhum código ruim entrou (commit vazio; master == conteúdo do pai APROVADO, 48/48 testes verdes).
+- **Mitigação commitada** (`676bc50`): `merge-sprint.ps1` agora faz `git pull` antes de verificar, usa o **último veredito** do arquivo e cruza com `state.json.rejected`.
+
+### Bugs reais abertos (da revisão adversarial do commit vazio — a revisão real mais útil do dia)
+RT-005 **NÃO está fechado**. Achados em `docs/reviews/19ffacc…md`:
+1. **MEDIUM** — waiter→leader recursivo sem teto: burst + DB falhando = N inserts em série, contadores mentem de novo (`dedup-store.ts`, ramo `leaderOutcome.status === 'error'`).
+2. **MEDIUM** — sync-throw do `repo.create` deixa entrada stale no `inFlight` → hang infinito na 2ª chamada (fix: `finally { if (this.inFlight.get(key) === promise) this.inFlight.delete(key); }`).
+3. **MEDIUM** — zero testes dos caminhos de erro do in-flight map.
+4. **LOW** — `security-fixes.test.ts` commitado com encoding corrompido (git trata como Bin; diffs opacos).
+5. **LOW** — FINDINGS.md não atualizado (SEC atualiza após re-teste).
+
+### Próximo passo exato
+1. DONO → DEV (MSG de fix, ver chat): corrigir achados 1-4 acima em sprint `sprint/f1-security-fixes-2`.
+2. Merge gate → SEC re-testa com PoCs e fecha/rebaixa RT-004/005/006 no FINDINGS.md.
+3. Só então MSG 1 abrindo a F2 (wallet monitor).
+
+### Regras reforçadas pelo incidente
+- Commit vazio com claim de fix = falha de processo do DEV; REVIEW bloqueia, e agora o gate bloqueia também por veredito final + state.
+- CÉREBRO só roda merge depois de o watcher estar quieto (esperar ~2min após último veredito novo em docs/reviews/).
+
+---
+
 ## 2026-09-22 — FASE 1 CONCLUÍDA (branch `sprint/f1-postgres-live`)
 
 ### O que foi feito (com SHAs)

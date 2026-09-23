@@ -49,6 +49,14 @@ export class DedupCounters {
 
 export class DedupStore {
   private readonly seen = new Set<string>();
+  /**
+   * RT-005: mapa de operações em voo. Concorrência sobre a mesma dedupKey
+   * (reconnect storm) NÃO cria N inserts paralelos que inflam contadores —
+   * somente o primeiro vira líder de insert; os demais aguardam e, se o
+   * líder persistiu, são classificados como 'duplicate' (já existe no DB).
+   * Se o líder falhar, o primeiro waiter assume a liderança e tenta.
+   */
+  private readonly inFlight = new Map<string, Promise<DedupOutcome>>();
   readonly counters = new DedupCounters();
 
   constructor(
@@ -66,21 +74,11 @@ export class DedupStore {
     }
   }
 
-  /**
-   * Verifica e persiste. Retorna 'duplicate' se a dedupKey já existe
-   * (cache ou unique constraint do banco).
-   */
-  async checkAndPersist(key: string, record: ObservedEventInsertData): Promise<DedupOutcome> {
-    // Fast-path: memória (só evita trabalho; NUNCA é a autoridade final).
-    if (this.seen.has(key)) {
-      this.counters.deduplicated++;
-      return { status: 'duplicate' };
-    }
-
+  private async persistLeader(key: string, record: ObservedEventInsertData): Promise<DedupOutcome> {
     try {
       await this.repo.create({ data: record });
       this.remember(key);
-      this.counters.ingested++;
+      this.counters.ingested++; // contabiliza APÓS insert real (RT-005)
       return { status: 'new' };
     } catch (err) {
       if (isUniqueConstraintError(err)) {
@@ -93,6 +91,41 @@ export class DedupStore {
         status: 'error',
         error: err instanceof Error ? err : new Error(`DATABASE_ERROR: ${String(err)}`),
       };
+    } finally {
+      this.inFlight.delete(key);
     }
+  }
+
+  /**
+   * Verifica e persiste. Retorna 'duplicate' se a dedupKey já existe
+   * (cache, unique constraint do banco OU operação em voo concluída com sucesso).
+   */
+  async checkAndPersist(key: string, record: ObservedEventInsertData): Promise<DedupOutcome> {
+    // Fast-path: memória (só evita trabalho; NUNCA é a autoridade final).
+    if (this.seen.has(key)) {
+      this.counters.deduplicated++;
+      return { status: 'duplicate' };
+    }
+
+    // RT-005: dedup concorrente — join na operação em voo da mesma key.
+    const existing = this.inFlight.get(key);
+    if (existing !== undefined) {
+      const leaderOutcome = await existing;
+      if (leaderOutcome.status === 'new' || leaderOutcome.status === 'duplicate') {
+        this.counters.deduplicated++;
+        return { status: 'duplicate' };
+      }
+      // Líder falhou (erro de DB transitório): este waiter tenta como novo líder.
+      return this.checkAndPersist(key, record);
+    }
+
+    const promise = this.persistLeader(key, record);
+    this.inFlight.set(key, promise);
+    return promise;
+  }
+
+  /** Apenas observabilidade/teste: tamanho do mapa em voo. */
+  get inFlightSize(): number {
+    return this.inFlight.size;
   }
 }

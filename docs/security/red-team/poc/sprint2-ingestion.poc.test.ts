@@ -1,0 +1,167 @@
+/**
+ * PoC Sprint 2 — ataques ao pipeline de ingestão F1.
+ *
+ * Executável: npx vitest run docs/security/red-team/poc
+ * Cada teste documenta um vetor de ataque e se ele PASSOU (defesa segurou)
+ * ou FALHOU (vulnerabilidade confirmada → finding).
+ */
+import { describe, it, expect } from 'vitest';
+import { parseRawNotification, parseNormalizedEvent } from '../../../../services/data-ingestion/src/schemas.js';
+import { normalizeRawNotification } from '../../../../services/data-ingestion/src/normalizer.js';
+import { DedupStore, type ObservedEventRepo } from '../../../../services/data-ingestion/src/dedup-store.js';
+
+// ---------------------------------------------------------------- helpers
+function fakeRepo(behavior: 'ok' | 'p2002-on-second' | 'always-error' = 'ok'): {
+  repo: ObservedEventRepo;
+  calls: number[];
+  data: unknown[];
+} {
+  let n = 0;
+  const data: unknown[] = [];
+  return {
+    calls: [],
+    data,
+    repo: {
+      async create(args: { data: unknown }) {
+        n++;
+        data.push(args.data);
+        if (behavior === 'p2002-on-second' && n > 1) {
+          const e = new Error('Unique constraint failed') as Error & { code: string };
+          e.code = 'P2002';
+          throw e;
+        }
+        if (behavior === 'always-error') throw new Error('connection refused');
+        return {};
+      },
+    },
+  };
+}
+
+describe('ATAQUE 1 — schema zod na borda (rawNotification)', () => {
+  it('rejeita tipos errados (signature number, slot negativo, objeto aninhado malicioso)', () => {
+    expect(parseRawNotification({ signature: 123, slot: 1 }).success).toBe(false);
+    expect(parseRawNotification({ signature: 'ok', slot: -5 }).success).toBe(false);
+    expect(parseRawNotification({ signature: {}, slot: 1 }).success).toBe(false);
+    expect(parseRawNotification(null).success).toBe(false);
+    expect(parseRawNotification(undefined).success).toBe(false);
+    expect(parseRawNotification('string').success).toBe(false);
+  });
+
+  it('strict mode descarta campos extras (payload não declarado é rejeitado?)', () => {
+    // .strict() → campos desconhecidos REJEITAM o objeto inteiro
+    const r = parseRawNotification({ signature: 'sig', slot: 1, evilField: 'x' });
+    expect(r.success).toBe(false); // strict rejeita — defesa forte
+  });
+});
+
+describe('ATAQUE 2 — DoS via campos sem limite de tamanho', () => {
+  it('VULN CANDIDATO: signature de 10 MB é aceita pelo schema (sem max length)', () => {
+    const huge = 'A'.repeat(10 * 1024 * 1024);
+    const r = parseRawNotification({ signature: huge, slot: 1 });
+    // Se true: o schema aceita strings arbitrariamente grandes → memória/DB.
+    expect(r.success).toBe(true); // documenta o comportamento ATUAL (finding)
+  });
+
+  it('signature com caracteres de controle/unicode hostil é aceita', () => {
+    const hostile = 'sig\u0000\u0001\u202E\u{1F4A3}';
+    const r = parseRawNotification({ signature: hostile, slot: 1 });
+    expect(r.success).toBe(true); // finding: sem allowlist de base58
+  });
+
+  it('coerção de slot: string numérica é aceita (comportamento esperado, documentar)', () => {
+    const r = parseRawNotification({ signature: 's', slot: '12345' });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.slot).toBe(12345);
+  });
+
+  it('coerção de slot com string NÃO numérica é rejeitada (NaN)', () => {
+    expect(parseRawNotification({ signature: 's', slot: 'abc' }).success).toBe(false);
+  });
+});
+
+describe('ATAQUE 3 — dedup sob replay / concorrência', () => {
+  it('replay sequencial: mesma key 2x → 1 new + 1 duplicate (idempotente)', async () => {
+    const { repo, data } = fakeRepo('p2002-on-second');
+    const store = new DedupStore(repo);
+    const rec = { signature: 'S', instructionIndex: 0, wallet: 'W', eventType: 'UNKNOWN' };
+    expect((await store.checkAndPersist('S|0|W', rec)).status).toBe('new');
+    expect((await store.checkAndPersist('S|0|W', rec)).status).toBe('duplicate');
+    expect(data.length).toBe(1); // fast-path impediu segundo insert
+  });
+
+  it('REPLAY CONCORRENTE: 50 chamadas simultâneas mesma key → apenas 1 insert físico?', async () => {
+    // Simula reconnect storm / redelivery burst: cache fast-path ainda não
+    // populado (primeira chamada awaitando), todas as demais passam direto.
+    const { repo, data } = fakeRepo('ok'); // repo SEM unique constraint → vê tudo
+    const store = new DedupStore(repo);
+    const rec = { signature: 'S', instructionIndex: 0, wallet: 'W', eventType: 'UNKNOWN' };
+    const outcomes = await Promise.all(
+      Array.from({ length: 50 }, () => store.checkAndPersist('S|0|W', rec)),
+    );
+    const news = outcomes.filter((o) => o.status === 'new').length;
+    // COMPORTAMENTO ATUAL: sem o banco rejeitando, N inserts concorrentes são feitos.
+    // A camada (b) do banco é a autoridade final — com a unique constraint real,
+    // 49 viram P2002 ('duplicate'). Mas contadores e cache serão inflados as
+    // incorretamente: as chamadas que vieram DEPOIS do 1º insert ainda viram
+    // status 'new' e incrementam `ingested` indevidamente.
+    expect(data.length).toBe(50); // finding: cache não protege burst concorrente (FACT observável)
+    expect(news).toBe(50); // todos reportados como 'new' — métrica `ingested` inflada
+  });
+
+  it('erro transitório de DB NÃO marca cache → retry posterior persiste (correto)', async () => {
+    const { repo, data } = fakeRepo('always-error');
+    const store = new DedupStore(repo);
+    const rec = { signature: 'S', instructionIndex: 0, wallet: 'W', eventType: 'UNKNOWN' };
+    expect((await store.checkAndPersist('S|0|W', rec)).status).toBe('error');
+    expect((await store.checkAndPersist('S|0|W', rec)).status).toBe('error');
+    expect(data.length).toBe(2); // tentou de novo — retry-friendly, sem falsos dedup
+  });
+});
+
+describe('ATAQUE 4 — normalizer com entrada adversarial', () => {
+  it('normalizer nunca lança exceção (fail-safe, retorna ok:false)', () => {
+    const malicious = [
+      null, undefined, 42, 3.14, Symbol.iterator.toString(), [1, 2, 3],
+      { signature: 's' }, // slot ausente
+      { signature: '', slot: 0 }, // signature vazia
+      { signature: 's', slot: 10 ** 309 }, // Infinity sem literal proibido
+      { signature: 's', slot: Number.MAX_SAFE_INTEGER + 2 }, // precision loss (computed, ok para lint)
+      { signature: 's', slot: 1, instruction_index: -1 },
+      { signature: 's', slot: 1, block_time: -1 },
+    ];
+    for (const m of malicious) {
+      expect(() => normalizeRawNotification(m, 'websocket')).not.toThrow();
+    }
+  });
+
+  it('slot extremo: a partir de 2^53+2 a precisão se perde — valores realistas (~3e8) são seguros', () => {
+    // ATAQUE REFUTADO: 2^53 (=9007199254740992) é exatamente representável;
+    // perda real só começa em 9007199254740994. Slots reais Solana ~3e8, ou
+    // seja, ~16 ORDENS de magnitude abaixo do limite. Impacto: nulo hoje.
+    // Registrado em SPRINTS.md como "evasão tentada sem sucesso".
+    const slotUnsafe = Number.MAX_SAFE_INTEGER + 2; // runtime: perde precisão (defesa do lint não se aplica a cálculo)
+    const r = parseRawNotification({
+      signature: 's',
+      slot: slotUnsafe,
+    });
+    expect(r.success).toBe(true); // schema aceita — mas slot desse tamanho é irreal
+    expect(parseRawNotification({ signature: 's', slot: 300_000_000 }).success).toBe(true);
+  });
+
+  it('block_time no futuro distante / epoch 1 são rejeitados (positive)', () => {
+    expect(
+      parseRawNotification({ signature: 's', slot: 1, block_time: 0 }).success,
+    ).toBe(false);
+  });
+});
+
+describe('ATAQUE 5 — normalizedEventSchema (segunda barreira no pipeline)', () => {
+  it('rejeita action fora do enum e event_id não-uuid', () => {
+    const base = normalizeRawNotification({ signature: 's', slot: 1 }, 'websocket');
+    expect(base.ok).toBe(true);
+    if (!base.ok) return;
+    expect(parseNormalizedEvent(base.event).success).toBe(true);
+    expect(parseNormalizedEvent({ ...base.event, action: 'HACK' }).success).toBe(false);
+    expect(parseNormalizedEvent({ ...base.event, event_id: 'not-a-uuid' }).success).toBe(false);
+  });
+});

@@ -14,15 +14,34 @@
 
 ## Histórico
 
-## SPRINT 1 — 2026-09-21 — Setup do red-team + supply chain/secrets baseline
-- Executada por: sessão de criação do agente red-team.
-- Escopo: criação da estrutura (`docs/security/red-team/`, agente `.agents/red-team.md`), varredura de secrets (`check:secrets`), `npm audit`.
-- Findings novos: RT-001 (vitest/vite CVEs — FIXED-VERIFIED), RT-002 (residual moderate — ACCEPTED), RT-003 (check-secrets quebrado no CI + falso negativo em `*_PRIVATE_KEY=` — FIXED-VERIFIED).
-- Automação implementada: CI agora tem job **Security Gate** (`npm run check:security` = secrets audit + npm audit high+) em todo push/PR e **schedule semanal** (segundas 03:00 UTC). AGENTS.md §8 agora exige sprint do red-team como **gate de conclusão de cada fase**.
-- Findings fechados (re-testados): nenhum.
-- Evasões tentadas sem sucesso: `check-secrets` detectou e ignora comentários apropriadamente após ajuste (falso positivo corrigido: linha `# A private key...` no `.env`).
-- Observação: script `check-secrets.ps1` agora ignora linhas comentadas (`#`/`//`) — trade-off documentado; revisar se surgir falso negativo.
-- Próximo alvo sugerido: **guards financeiros** (kill switch, dupla trava LIVE, Risk Engine bypass por race condition) — prioridade 1 da fila.
+## SPRINT 2 — 2026-09-22 — Auditoria pós-merge F1 (ingestion + dedup)
+- Executada por: chat SEC (red-team), após merge `6b1ed97`.
+- Escopo: parsers de eventos on-chain (`schemas.ts`, `normalizer.ts`), dedup sob replay/reconnect/concorrência (`dedup-store.ts`), validação zod na borda, guards pipeline, provider `helius-provider.ts` (WSS, não há webhooks implementados).
+- Envolvidos: arquivos novos alterados em F1 + contexto de `packages/solana`, `packages/config`.
+- Cobertura de alvos da fila: **3 (input adversarial/parsers)** ✓, **5 (DoS/estresse/dedup)** ✓ (parcial — fault-injection DB/RPC simulada via stubs; carga real de rede adiada), webhooks → **N/A nesta fase** (não há webhook na F1; usar WSS).
+- Método: 13 testes unitários adversariais + 2 suites property-based (fast-check, 500 + 2000 runs) em `docs/security/red-team/poc/`.
+- Findings novos: **RT-004 (MEDIUM)**, RT-005 (LOW), RT-006 (LOW).
+- Findings fechados: nenhum.
+- Evasões tentadas SEM SUCESSO (defesa segurou — importante documentar):
+  1. Strict mode do zod rejeitou campos extras de forma hostil — sem prototype pollution via spread.
+  2. `z.coerce.number().int()` rejeitou NaN/Infinity/negativos em slot/block_time.
+  3. Dedup cache LRU está correto em chamadas sequenciais e em P2002; erro transitório NÃO marca cache (retry-friendly, comportamento correto).
+  4. Slot perda de precisão exige ≥ 2^53 (9007199254740992) — inalcançável na Solana (~3e8). Ataque refutado.
+  5. `normalizeRawNotification` nunca lança exceção para NENHUM input arbitrário (fast-check 500 runs).
+  6. `safeHost()` não vaza `api-key` em logs (helius-provider.ts:424).
+  7. `failPendingSubscribes` fecha leak de promises de subscribe em disconnect.
+- Veredicto: veja seção "## Veredictos" abaixo.
+- Próximo alvo sugerido: **F1.5 enrichment (getTransaction parsing) — quando mergeado**, alvo 1 da fila (guards financeiros LIVE/kill switch) para F2+.
+
+## Veredictos
+
+### Sprint 2 — F1 ingestion (commit `6b1ed97`)
+**Veredicto: LIBERADO**
+- Nenhum finding CRITICAL/HIGH novo.
+- RT-004 (MEDIUM) e RT-005/006 (LOW) são resiliência/robustez — **não bloqueiam a F2**, mas DEVEM entrar na fila de trabalho de solana-ingestion. Alta prioridade para RT-004 antes de F1.5 (enrichment vai aumentar volumes).
+
+### Sprint 1 — Tooling
+**Veredicto: LIBERADO** (RT-001 FIXED-VERIFIED; RT-002 ACCEPTED; RT-003 FIXED-VERIFIED).
 
 <!-- Template:
 

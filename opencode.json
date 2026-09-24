@@ -17,6 +17,11 @@
       "url": "https://mcp.solana.com/mcp",
       "enabled": true
     },
+    "serena": {
+      "type": "local",
+      "command": ["cmd", "/c", "uvx", "--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--context", "ide-assistant", "--project", "."],
+      "enabled": true
+    },
     "helius-docs": {
       "type": "remote",
       "url": "https://www.helius.dev/docs/mcp",

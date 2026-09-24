@@ -193,6 +193,17 @@ Um componente novo só entra no baseline se **pelo menos uma** das condições f
 
 Toda proposta de mudança exige **ADR em `docs/architecture/decision-log.md` + testes** antes da adoção. "Repo legal que apareceu" não é justificativa. O monitoramento do ecossistema (Dependabot + `ecosystem-monitor.yml`) é o canal oficial de novidades — não conferência de chats nem achados aleatórios.
 
+## 8.3 Protocolo anti-alucinação (contexto e memória dos chats)
+
+LLMs degradam com contexto acumulado — isto é fato arquitetural, não defeito a lamentar. Defesas obrigatórias:
+
+1. **Evidência ou nada:** toda afirmação sobre estado do projeto (status de fase, veredito, decisão) deve citar SHA, arquivo+linha ou teste. Sem evidência → classificar como `UNKNOWN` e verificar antes.
+2. **Verificar > lembrar:** antes de escrever sobre um arquivo, RELEIA-O. Nunca editar baseado em leitura feita há mais de uma sessão sem confirmação (`git status`/`git log` primeiro).
+3. **Contexto cirúrgico:** docs grandes são fragmentados por design — ADRs são arquivos individuais em `docs/architecture/adr/` (índice em `decision-log.md`); `docs/handoff.md` mantém no máximo os **3 blocos datados mais recentes** (o resto vai para `docs/handoff-archive.md`). Ler o índice, depois só o documento necessário.
+4. **Verificação mecânica nos pontos críticos:** merges via `scripts/merge-sprint.ps1`; vereditos lidos do arquivo, nunca resumidos de memória.
+5. **Auto-declaração de incerteza:** se um chat perceber que está reconstruindo "de memória" em vez de ler, deve dizer explicitamente e parar.
+6. **Escrita em arquivos do repo:** usar as ferramentas de arquivo do agente (UTF-8). Proibido reescrever arquivos de texto via `Set-Content`/`Out-File` do PowerShell (corrompe encoding — incidente registrado em 2026-09-23).
+
 ## 9. O que NÃO fazer (síntese §143 do documento fonte)
 
 inventar endpoints/SDKs · esconder erros · ignorar warnings · usar LLM como trader · armazenar private key · concluir por poucos trades · usar só win rate · ignorar fees/slippage/latência · otimizar no test set · afirmar resultado sem estatística.

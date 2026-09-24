@@ -86,7 +86,7 @@ Formato: cada decisão registra contexto, alternativas, decisão, justificativa 
 - **Contexto:** pump.fun não publica SDK/IDL oficial; `pumpdotfun-sdk` (rckprtr) é autor individual, sem testes, estagnado desde mar/2025, preso a web3.js v1.
 - **Decisão:** IDL comunitária **vendored** no repo (versionada, auditada), validada contra transações reais on-chain (fixtures de signatures conhecidas). Nenhuma dependência npm de "pump" de autor anônimo.
 - **Justificativa:** supply-chain security (regra inviolável §2/§9); programa on-chain `6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P`. PumpSwap migrou parte do fluxo — IDLs podem estar desatualizadas, daí fixtures contra txs reais.
-- **Status:** FACT (decisão). IDL específica ainda não escolhida: UNKNOWN até validação contra on-chain.
+- **Status:** FACT (decisão). IDL específica ainda não escolhida: UNKNOWN até validação contra on-chain. **REVISADO pelo ADR-016 (2026-09-24):** existe SDK oficial `@pump-fun/pump-sdk` e `pump-public-docs`; a premissa "pump.fun não publica nada oficial" era falsa na época da verificação mais recente. IDL vendored continua vetada de fontes anônimas, mas a referência primária agora é oficial.
 
 ## ADR-013 — Jupiter/DexScreener/Birdeye/RugCheck via clientes HTTP internos
 
@@ -94,6 +94,14 @@ Formato: cada decisão registra contexto, alternativas, decisão, justificativa 
 - **Decisão:** clientes HTTP internos finos com zod-validação, retry/timeout, rate-limit e circuit breaker. Jupiter: REST API (Ultra/Quote v6, Price v3). GMGN: evitar (sem API pública; scraping viola robustez/ToS).
 - **Justificativa:** zero dependência externa = zero superfície de supply chain; alinhado com "SDK oficial > oficial > consolidada > comunitária".
 - **Status:** FACT (decisão).
+
+## ADR-016 — Pump.fun TEM SDK/docs oficiais; revisão parcial do ADR-012
+
+- **Contexto:** re-avaliação 2026-09-24 com checagem direta de GitHub/npm.
+- **Evidências (FACT):** org `pump-fun` no GitHub (criada out/2023, perfil linka pump.fun); `pump-fun/pump-public-docs` ativo (set/2026) com IDLs, eventos, bonding curve, fees, PumpSwap; `@pump-fun/pump-sdk` no npm (escopo org requer posse), v2.0.0 set/2026; `pump-fun/pump-fun-skills` (skills de agente: swap na curve/AMM com slippage + Jito protection).
+- **Decisão:** ADR-012 é REVISADO: pump.fun passa a ser fonte oficial. Parser/decoder do pipeline (F1.5) e construção de ordens (F9) usam `@pump-fun/pump-sdk` + `pump-public-docs` como referência primária, **sempre** validados por fixtures de transações reais (dados on-chain hostis se mantém). Skills: conteúdo vira **referência de leitura** em docs (não instalados como skill ativo de agente — ensinam a criar moedas/vender, fora do escopo dos agentes; regra §3).
+- **Suprido/adotado:** `jito-labs/searcher-examples` = referência oficial de bundles (F9). Descartados: `Mogerto/pump-fun-bot` (0★), `cutupdev/Solana-Copytrading-bot` (parado ago/2025; leitura ocasional apenas).
+- **Status:** FACT (verificado via GitHub API + npm registry em 2026-09-24).
 
 ## ADR-015 — Stack quantitativa e repos de referência (avaliação 2026-09-24)
 

@@ -22,4 +22,7 @@ Lista final avaliada; todos confirmados existentes e mantidos salvo nota. Nada a
 
 **Regra transversal reafirmada:** referência ≠ dependência; dependência entra só com licença checada + fase correspondente + zod na borda.
 
+**Agendado com gatilho (não é decisão de agora):**
+- `Graphify-Labs/graphify` (grafo de conhecimento da codebase, AST determinístico, sem vector store) — **candidato agendado**. Gatilho objetivo de instalação/piloto: quando `services/ + packages/` ultrapassarem **~30 arquivos fonte ativos** OU quando um chat novo errar navegação 2+ vezes na mesma sessão (sinal de codebase grande demais para bootstrap manual). Medir piloto contra Serena antes de adotar. Vigiado pelo `ecosystem-monitor.yml`. Rejeitados na mesma rodada (sem reavaliação): Caveman, Ponytail, Open-RLCD (inflam interferência de agente sem ganho medido; ver chat de 2026-09-24).
+
 - **Status:** FACT.

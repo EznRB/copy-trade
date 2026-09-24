@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-09-23 — F1 + sprint de segurança FORMALMENTE ENCERRADAS
+
+### Estado
+- **F1 CONCLUÍDA** (roadmap já marca CONCLUÍDA); sprint `f1-security-fixes-2` mergeada em `087a3e3` (gates verdes, 51/51).
+- SEC veredito final: **LIBERADO** — 0 findings OPEN (RT-004/005/006 FIXED-VERIFIED; PoCs viraram regressão permanente em `docs/security/red-team/poc/`, 17/17).
+- Gate de merge endurecido após o incidente de race (pull obrigatório + último veredito + state.json).
+
+### Pendências não-bloqueantes
+1. RT-004: corpo do finding ainda diz "Status: OPEN" (resumo está correto) — corrigir na próxima interação com o SEC.
+2. Rotação de credenciais ainda não feita: Helius API key + GitHub PAT (vazaram em histórico de chat).
+3. `security-fixes.test.ts` — verificar no próximo diff se o encoding continua Bin.
+4. F1.5 (enrichment BUY/SELL) ficou explícita no roadmap como fase intermediária antes da F2.
+
+### Próximo passo exato
+Decisão do dono: F1.5 (enrichecer eventos com lado/valores do swap) OU F2 direto (wallet monitor). Recomendação: F1.5 primeiro — o SEC já havia condicionado F1.5 ao RT-004 (agora fechado), e a F2 sem BUY/SELL produz wallets com métricas vazias.
+
+---
+
 ## 2026-09-23 — INCIDENTE: merge com commit REJEITADO (race no gate) + fixes pendentes
 
 ### O que aconteceu

@@ -180,6 +180,19 @@ Acesso a arquivos e shell já é nativo dos agentes (não requer MCP).
 - Não navegar em páginas com sessões sensíveis (wallets, exchanges, extension com chaves). Screenshots podem capturar dados sensíveis — não commitá-los.
 - Se o Playwright pedir browser não instalado, rodar `npx playwright install chromium`.
 
+## 8.2 Estabilidade arquitetural (regra inviolável de evolução)
+
+Nenhum repositório, biblioteca, ferramenta ou técnica nova altera a arquitetura aprovada por si só.
+
+Um componente novo só entra no baseline se **pelo menos uma** das condições for verdadeira:
+
+1. Uma dependência/protocolo oficial mudou (ex.: pump.fun publicou mudança breaking no programa);
+2. Ele substitui um componente existente com benefício **mensurável**;
+3. Um gargalo **medido** em produção o exige;
+4. Os requisitos do projeto mudaram.
+
+Toda proposta de mudança exige **ADR em `docs/architecture/decision-log.md` + testes** antes da adoção. "Repo legal que apareceu" não é justificativa. O monitoramento do ecossistema (Dependabot + `ecosystem-monitor.yml`) é o canal oficial de novidades — não conferência de chats nem achados aleatórios.
+
 ## 9. O que NÃO fazer (síntese §143 do documento fonte)
 
 inventar endpoints/SDKs · esconder erros · ignorar warnings · usar LLM como trader · armazenar private key · concluir por poucos trades · usar só win rate · ignorar fees/slippage/latência · otimizar no test set · afirmar resultado sem estatística.

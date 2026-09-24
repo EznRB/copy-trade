@@ -1,0 +1,38 @@
+# Dependabot — camada 1 do monitoramento do ecossistema (ADR-020)
+# NUNCA auto-merge: PRs passam pelo pipeline normal (REVIEW + SEC quando aplicável).
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 8
+    groups:
+      protocolo-critico:
+        patterns:
+          - "@pump-fun/*"
+          - "@solana/*"
+          - "@solana-program/*"
+          - "helius-sdk"
+          - "@triton-one/*"
+      tooling:
+        patterns:
+          - "*eslint*"
+          - "*typescript*"
+          - "vitest"
+          - "prettier"
+    labels: ["dependencies"]
+
+  - package-ecosystem: "pip"
+    directory: "/backtester"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies"]

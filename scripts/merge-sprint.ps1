@@ -46,7 +46,7 @@ foreach ($sha in $commits) {
     $content = Get-Content $review -Raw
     # O veredito que vale eh o ULTIMO do arquivo (watcher pode re-revisar).
     # Formatos observados: "Veredito: **APROVADO**" / "VERDICT: REJEITADO".
-    $verdicts = [regex]::Matches($content, '(?i)veredi[ck]to:\s*\**([A-Z]+)\**')
+    $verdicts = [regex]::Matches($content, '(?i)\b(?:veredito|veredicto|verdict)\b\s*:\s*\**\s*(APROVADO|REJEITADO)\**')
     $last = if ($verdicts.Count -gt 0) { $verdicts[$verdicts.Count - 1].Groups[1].Value.ToUpper() } else { '' }
     if ($last -eq 'APROVADO') {
         Write-Output "  [APROVADO] $($sha.Substring(0,8))"

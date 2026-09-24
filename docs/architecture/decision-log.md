@@ -103,6 +103,13 @@ Formato: cada decisão registra contexto, alternativas, decisão, justificativa 
 - **Suprido/adotado:** `jito-labs/searcher-examples` = referência oficial de bundles (F9). Descartados: `Mogerto/pump-fun-bot` (0★), `cutupdev/Solana-Copytrading-bot` (parado ago/2025; leitura ocasional apenas).
 - **Status:** FACT (verificado via GitHub API + npm registry em 2026-09-24).
 
+## ADR-017 — Aprendizados arquiteturais do cutupdev/Solana-Copytrading-bot + status VectorBT/Optuna
+
+- **cutupdev/Solana-Copytrading-bot** (276★, Rust, sem licença → leitura apenas, repo-vitrine de freelancer): insights adotados como HYPOTHESIS a validar na F9 — (a) gRPC/Geyser ~50-100ms vs RPC WS ~300-500ms para detecção de tx da wallet (coerente com ADR-011); (b) swap direto na DEX (pump.swap/curve) reduz latência vs Jupiter aggregator; Jupiter vira fallback, não caminho primário. Reclamações de performance = claims de vendedor, não fatos.
+- **VectorBT** (9.2k★, ativo set/2026, licença custom — revisar antes de uso em produção): confirmado para research/SPP na F5 sobre eventos persistidos; backtester determinístico próprio segue como autoridade de decisão.
+- **Optuna** (14.8k★, MIT, ativo): F7; proibido otimizar sobre test set — walk-forward externo obrigatório.
+- **Status:** FACT (verificado GitHub em 2026-09-24).
+
 ## ADR-015 — Stack quantitativa e repos de referência (avaliação 2026-09-24)
 
 - **Contexto:** avaliação de lista externa (GPT) de MCPs/repos/tópicos quant para o projeto.

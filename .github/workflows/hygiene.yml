@@ -1,0 +1,45 @@
+# Higiene mensal do repositório — report-only (nunca deleta).
+# Itens reportados viram issue; deleção exige decisão humana/ADR (AGENTS.md §8.2).
+name: hygiene
+
+on:
+  schedule:
+    - cron: "0 12 1 * *" # dia 1 de cada mês, 12:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+
+jobs:
+  hygiene-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Rodar varredura de higiene
+        id: scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          REPORT=$(node scripts/hygiene-check.mjs)
+          if echo "$REPORT" | grep -q "Nenhum problema"; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+            echo "Repo limpo, sem issue."
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+            echo "$REPORT" > /tmp/hygiene-report.md
+          fi
+
+      - name: Abrir issue com o relatório (se houver itens)
+        if: steps.scan.outputs.clean == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "[hygiene] Relatório mensal $(date +%Y-%m)" \
+            --body-file /tmp/hygiene-report.md \
+            --label "hygiene" || true

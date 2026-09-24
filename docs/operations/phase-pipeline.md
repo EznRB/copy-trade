@@ -52,7 +52,19 @@ Qualquer REJEITADO volta ao DEV (correção na própria branch ou via `review-fi
 
 ## Protocolo de sincronização entre chats
 
-1. **Antes de qualquer sessão:** `git status` + `git log --oneline -10` — entenda o que mudou.
+### Bootstrap obrigatório de toda sessão (QUALQUER chat, sem exceção)
+
+```
+1. git pull origin master
+2. git status && git log --oneline -10
+3. Ler docs/handoff.md (máx. 3 blocos recentes)
+4. Ler o ADR citado como leitura na MSG da sua tarefa (adr/ADR-0NN-*.md)
+5. Só então trabalhar
+```
+
+Regra de staleness: se sua sessão foi aberta **antes do último commit no master**, você está desatualizado por definição — rode o bootstrap antes de escrever qualquer coisa. Este bootstrap é o único ponto de sincronização; não existe "eu lembro o estado do projeto".
+
+1. **Antes de qualquer sessão:** bootstrap acima. **Nunca** confiar na memória da sessão anterior.
 2. **DEV commita no mínimo uma vez por task** (ver §7.1). Trabalho não commitado não existe.
 3. **REVIEW/SEC só atuam sobre commits**, nunca sobre working tree sujo.
 4. **Ao trocar de chat**, handoff contém: SHA do último commit, status das gates, pendências.

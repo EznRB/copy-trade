@@ -76,7 +76,9 @@ Se você quiser fazer sozinho mesmo assim, basta rodar o mesmo script num termin
 
 ### MSG 5 — Abertura de QUALQUER chat novo (template universal)
 
-> Este projeto é o copytrade (Solana). Antes de qualquer tarefa leia: `AGENTS.md`, `docs/operations/phase-pipeline.md`, `docs/handoff.md`. Seu papel nesta sessão é: <DEV | REVIEW | SEC | CÉREBRO>. Confirme seu papel e as regras que se aplicam a você.
+> Este projeto é o copytrade (Solana). Rode o bootstrap de sincronização de `docs/operations/phase-pipeline.md` (`git pull` + git log + ler `docs/handoff.md` + ler os ADRs citados na sua tarefa). Seu papel nesta sessão é: <DEV | REVIEW | SEC | CÉREBRO>. Confirme seu papel, o último SHA que você viu no master, e as regras que se aplicam a você.
+
+*(Se o chat respondeu sem citar o último SHA, ele NÃO fez o bootstrap — mande de novo. É o teste de fumaça mais barato que existe.)*
 
 ---
 

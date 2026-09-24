@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@ct/types": "0.1.0",
-    "@solana-program/system": "^0.12.2",
-    "@solana-program/token": "^0.13.0",
-    "@solana/kit": "^6.10.0",
+    "@solana-program/system": "^0.14.1",
+    "@solana-program/token": "^0.16.1",
+    "@solana/kit": "^8.3.0",
     "@triton-one/yellowstone-grpc": "^7.0.1",
     "helius-sdk": "^3.2.0",
     "ws": "^8.18.0"

@@ -19,7 +19,7 @@
     "@ct/types": "*"
   },
   "devDependencies": {
-    "prisma": "^5.14.0",
+    "prisma": "^7.10.0",
     "typescript": "^5.4.5"
   }
 }

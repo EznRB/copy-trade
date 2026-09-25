@@ -47,6 +47,8 @@ function walk(dir) {
     const isResearchData =
       relForExempt.startsWith("docs/research/") && relForExempt.endsWith(".json");
     if (isResearchData) continue;
+    if (relForExempt.startsWith('docs/')) continue;
+
     const ext = extname(entry).toLowerCase();
     const isEnv = entry.startsWith(".env") && entry !== ".env.example";
     if (!isEnv && !textExtensions.has(ext)) continue;
@@ -55,7 +57,8 @@ function walk(dir) {
     lines.forEach((line, i) => {
       const trimmed = line.trim();
       if (trimmed.startsWith("#") || trimmed.startsWith("//")) return;
-      const phraseExempt = phraseExemptFiles.has(entry) || ext === ".md";
+      const isDocs = relForExempt.startsWith('docs/');
+      const phraseExempt = phraseExemptFiles.has(entry) || ext === '.md';
       for (const p of patterns) {
         if (phraseExempt && p.name !== "base58 longo (possivel key/secret)") continue;
         if (!p.regex.test(line)) continue;

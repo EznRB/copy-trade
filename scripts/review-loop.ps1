@@ -79,20 +79,29 @@ function Invoke-Native([string]$cmd) {
     return $LASTEXITCODE
 }
 
-function Invoke-Gates {
-    Write-WatchLog 'Gates: lint'
-    $lint = Invoke-Native 'npm run lint --silent'
+function Invoke-Gates([string]$workdir) {
+    # Gates rodam DENTRO do worktree do commit revisado — nunca no master.
+    Write-WatchLog "Gates: lint ($workdir)"
+    $lint = Invoke-Native "cd /d `"$workdir`" && npm run lint --silent"
     Write-WatchLog 'Gates: typecheck'
-    $tc = Invoke-Native 'npm run typecheck --silent'
+    $tc = Invoke-Native "cd /d `"$workdir`" && npm run typecheck --silent"
     Write-WatchLog 'Gates: test'
-    $tst = Invoke-Native 'npm test --silent'
+    $tst = Invoke-Native "cd /d `"$workdir`" && npm test --silent"
     return [pscustomobject]@{
         Lint = $lint; Typecheck = $tc; Test = $tst
         Ok = ($lint -eq 0 -and $tc -eq 0 -and $tst -eq 0)
     }
 }
 
-function Invoke-CodeReview([string]$sha, [string]$branch) {
+function New-ReviewWorktree([string]$sha) {
+    # Worktree isolado (detached) por commit — sem race com o worktree do DEV.
+    $wt = Join-Path $RepoRoot ".review-wt"
+    if (Test-Path $wt) { git worktree remove $wt --force 2>$null }
+    git worktree add --detach $wt $sha 2>$null | Out-Null
+    return $wt
+}
+
+function Invoke-CodeReview([string]$sha, [string]$branch, [string]$workdir) {
     $prompt = @"
 Voce e o code-reviewer deste repositorio (leia .agents/code-reviewer.md e AGENTS.md).
 Revise ADVERSARIALMENTE o commit ${sha} (branch $branch). Rode: git show $sha.
@@ -105,9 +114,16 @@ Seguida de lista de achados (cada um com severidade CRITICAL/HIGH/MEDIUM/LOW).
 "@
     $prev = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'  # stderr do CLI nao vira excecao
+    # external_directory liberado somente para o repo pai (worktrees irmaos),
+    # evitando auto-rejeicao quando o revisor le arquivos da sprint.
+    $oldCfg = $env:OPENCODE_CONFIG_CONTENT
+    $env:OPENCODE_CONFIG_CONTENT = '{"permission":{"external_directory":{"C:\\Users\\enzo\\Desktop\\**":"allow"}}}'
     try {
+        Push-Location $workdir
         $out = opencode run -m opencode/big-pickle --agent code-reviewer $prompt 2>&1 | Out-String
     } finally {
+        Pop-Location
+        if ($null -ne $oldCfg) { $env:OPENCODE_CONFIG_CONTENT = $oldCfg } else { Remove-Item Env:OPENCODE_CONFIG_CONTENT -ErrorAction SilentlyContinue }
         $ErrorActionPreference = $prev
     }
     return $out
@@ -166,8 +182,15 @@ do {
         foreach ($c in $candidates) {
             if ($known -contains $c.Sha) { continue }
             Write-WatchLog "Novo commit detectado: $($c.Sha) em $($c.Branch)"
-            $gates = Invoke-Gates
-            $reviewOut = Invoke-CodeReview -sha $c.Sha -branch $c.Branch
+            $wt = New-ReviewWorktree $c.Sha
+            try {
+                Push-Location $wt; cmd /c "npm install --silent >NUL 2>&1"; Pop-Location
+                $gates = Invoke-Gates -workdir $wt
+                $reviewOut = Invoke-CodeReview -sha $c.Sha -branch $c.Branch -workdir $wt
+            } finally {
+                git worktree remove $wt --force 2>$null
+                git worktree prune 2>$null | Out-Null
+            }
             $verdict = if ($reviewOut -match 'VERDICT:\s*REJEITADO') { 'REJEITADO' } else { 'APROVADO' }
             if (-not $gates.Ok -and $verdict -eq 'APROVADO') { $verdict = 'REJEITADO (gates falharam)' }
             if ($verdict -match 'REJEITADO') {

@@ -14,7 +14,9 @@ import {
 import { PUMP_PROGRAM_ADDRESS } from './generated/pump/programs/index.js';
 import {
   BUY_DISCRIMINATOR as AMM_BUY,
+  SELL_DISCRIMINATOR as AMM_SELL,
   getBuyInstructionDataEncoder as ammBuyEnc,
+  getSellInstructionDataEncoder as ammSellEnc,
 } from './generated/pump_amm/instructions/index.js';
 import { PUMP_AMM_PROGRAM_ADDRESS } from './generated/pump_amm/programs/index.js';
 
@@ -34,9 +36,9 @@ function pumpAccounts(): string[] {
   return acc;
 }
 
-/** 22 contas na ordem da IDL pump_amm.* (pool=0, user=1, baseMint=3). */
+/** 23 contas na ordem canonica da IDL pump_amm.* buy (pool=0, user=1, baseMint=3, quoteMint=4). */
 function ammAccounts(): string[] {
-  const acc = Array.from({ length: 22 }, () => FILLER);
+  const acc = Array.from({ length: 23 }, () => FILLER);
   acc[0] = POOL;
   acc[1] = USER;
   acc[3] = MINT;
@@ -55,6 +57,9 @@ function sellData(): Uint8Array<ArrayBuffer> {
 }
 function ammBuyData(): Uint8Array<ArrayBuffer> {
   return toBytes(ammBuyEnc().encode({ baseAmountOut: 9n, maxQuoteAmountIn: 99n, trackVolume: [false] }));
+}
+function ammSellData(): Uint8Array<ArrayBuffer> {
+  return toBytes(ammSellEnc().encode({ baseAmountIn: 11n, minQuoteAmountOut: 22n }));
 }
 
 describe('decoder F1.5 - caminho positivo (sintetico)', () => {
@@ -171,6 +176,30 @@ describe('decoder F1.5 - payloads adversariais (null, nunca throw)', () => {
     expect(() =>
       decodePumpInstruction(PUMP_AMM_PROGRAM_ADDRESS, bad, ammAccounts()),
     ).not.toThrow();
+  });
+});
+
+describe('decoder F1.5 - gates por contagem canonica da IDL (review A-1)', () => {
+  it('pump SELL com exatas 14 contas (IDL) decodifica', () => {
+    const acc14 = pumpAccounts().slice(0, 14);
+    const d = decodePumpInstruction(PUMP_PROGRAM_ADDRESS, sellData(), acc14);
+    expect(d).not.toBeNull();
+    expect(d!.kind).toBe('pump_sell');
+    expect(d!.mint).toBe(MINT);
+  });
+
+  it('pump sell com 13 contas (abaixo da IDL) retorna null', () => {
+    expect(
+      decodePumpInstruction(PUMP_PROGRAM_ADDRESS, sellData(), pumpAccounts().slice(0, 13)),
+    ).toBeNull();
+  });
+
+  it('pump_amm SELL com exatas 21 contas (IDL) decodifica', () => {
+    const acc21 = ammAccounts().slice(0, 21);
+    const d = decodePumpInstruction(PUMP_AMM_PROGRAM_ADDRESS, ammSellData(), acc21);
+    expect(d).not.toBeNull();
+    expect(d!.kind).toBe('pumpswap_sell');
+    expect(AMM_SELL).toHaveLength(8);
   });
 });
 

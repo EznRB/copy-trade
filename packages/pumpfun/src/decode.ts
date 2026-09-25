@@ -53,9 +53,19 @@ function validAddr(a: unknown): a is string {
   return typeof a === 'string' && addressSchema.safeParse(a).success;
 }
 
-/** Contas mínimas esperadas: pump.buy/sell = 16; pump_amm.buy/sell = 22. */
-const PUMP_MIN_ACCOUNTS = 16;
-const AMM_MIN_ACCOUNTS = 22;
+/**
+ * Contas mínimas POR INSTRUÇÃO (canônico da IDL oficial pump-public-docs @81091419):
+ * pump.buy=16, pump.sell=14, pumpAmm.buy=23, pumpAmm.sell=21.
+ * O gate vem DEPOIS do match de discriminador (review d016b8b CRITICAL A-1:
+ * com gate unico 16/22 antes do match, sell com 14/21 contas era descartado
+ * silenciosamente — viés de selecao no feed).
+ */
+const MIN_ACCOUNTS = {
+  pump_buy: 16,
+  pump_sell: 14,
+  pumpswap_buy: 23,
+  pumpswap_sell: 21,
+} as const;
 
 export function decodePumpInstruction(
   programId: string,
@@ -66,14 +76,19 @@ export function decodePumpInstruction(
     // Normaliza para Uint8Array: os decoders do codama exigem Uint8Array.
     const bytes = data instanceof Uint8Array ? data : Uint8Array.from(Array.from(data));
     if (programId === PUMP_PROGRAM_ADDRESS) {
-      if (accounts.length < PUMP_MIN_ACCOUNTS) return null;
+      // Discriminador primeiro (gate de contas é por instrucao — review A-1).
+      const isBuy = discEq(bytes, PUMP_BUY);
+      const isSell = !isBuy && discEq(bytes, PUMP_SELL);
+      if (!isBuy && !isSell) return null;
+      const minAcc = isBuy ? MIN_ACCOUNTS.pump_buy : MIN_ACCOUNTS.pump_sell;
+      if (accounts.length < minAcc) return null;
       // IDL: mint=2, bondingCurve=3, user=6
       const mint = accounts[2];
       const counterparty = accounts[3];
       const user = accounts[6];
       if (!validAddr(mint) || !validAddr(counterparty) || !validAddr(user)) return null;
 
-      if (discEq(bytes, PUMP_BUY)) {
+      if (isBuy) {
         const d = pumpBuyDecoder().decode(bytes);
         return {
           kind: 'pump_buy',
@@ -85,23 +100,26 @@ export function decodePumpInstruction(
           solAmount: d.maxSolCost.toString(),
         };
       }
-      if (discEq(bytes, PUMP_SELL)) {
-        const d = pumpSellDecoder().decode(bytes);
-        return {
-          kind: 'pump_sell',
-          direction: 'sell',
-          mint: mint!,
-          user: user!,
-          counterparty: counterparty!,
-          tokenAmount: d.amount.toString(),
-          solAmount: d.minSolOutput.toString(),
-        };
-      }
-      return null;
+      // isSell (verificado acima)
+      const d = pumpSellDecoder().decode(bytes);
+      return {
+        kind: 'pump_sell',
+        direction: 'sell',
+        mint: mint!,
+        user: user!,
+        counterparty: counterparty!,
+        tokenAmount: d.amount.toString(),
+        solAmount: d.minSolOutput.toString(),
+      };
     }
 
     if (programId === PUMP_AMM_PROGRAM_ADDRESS) {
-      if (accounts.length < AMM_MIN_ACCOUNTS) return null;
+      // AMM: discriminador primeiro; gate de contas por instrucao.
+      const ammIsBuy = discEq(bytes, AMM_BUY);
+      const ammIsSell = !ammIsBuy && discEq(bytes, AMM_SELL);
+      if (!ammIsBuy && !ammIsSell) return null;
+      const ammMin = ammIsBuy ? MIN_ACCOUNTS.pumpswap_buy : MIN_ACCOUNTS.pumpswap_sell;
+      if (accounts.length < ammMin) return null;
       // IDL: pool=0, user=1, baseMint=3, quoteMint=4
       const counterparty = accounts[0];
       const user = accounts[1];
@@ -124,7 +142,7 @@ export function decodePumpInstruction(
       const mapKind = (ix: 'buy' | 'sell'): DecodedSwap['kind'] =>
         mapDirection(ix) === 'buy' ? 'pumpswap_buy' : 'pumpswap_sell';
 
-      if (discEq(bytes, AMM_BUY)) {
+      if (ammIsBuy) {
         const d = ammBuyDecoder().decode(bytes);
         // quoteIn = wSOL gasto (se quote=wSOL); token = baseAmountOut.
         return {
@@ -137,7 +155,7 @@ export function decodePumpInstruction(
           solAmount: quoteIsWsol ? d.maxQuoteAmountIn.toString() : d.baseAmountOut.toString(),
         };
       }
-      if (discEq(bytes, AMM_SELL)) {
+      if (ammIsSell) {
         const d = ammSellDecoder().decode(bytes);
         // baseIn = token vendido (se quote=wSOL); quoteOut = wSOL recebido.
         return {

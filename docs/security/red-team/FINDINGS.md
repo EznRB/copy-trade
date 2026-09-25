@@ -7,7 +7,7 @@
 
 | Total | OPEN | FIX-IN-REVIEW | FIXED-VERIFIED | ACCEPTED | FALSE-POSITIVE |
 | ----- | ---- | ------------- | -------------- | -------- | -------------- |
-| 6     | 3    | 0             | 2              | 1        | 0              |
+| 6     | 0    | 0             | 5              | 1        | 0              |
 
 ## Findings
 
@@ -45,8 +45,7 @@
 
 <!-- ==== SPRINT 2 (auditoria F1, pós-merge 6b1ed97) ==== -->
 
-### RT-004 — Schema de ingestão aceita strings ilimitadas (DoS de memória/DB)
-- Severidade: MEDIUM
+### RT-004 — Schema de ingestão aceita strings ilimitadas (DoS de memória/DB)- Severidade: MEDIUM
 - Status: OPEN
 - Arquivo/linha: `services/data-ingestion/src/schemas.ts:20-27` (`signature`, `wallet` — `z.string().min(1)` sem `.max()`)
 - Descrição: `parseRawNotification` não limita tamanho. Uma única notificação com `signature` de 10 MB é aceita, propagada ao `logsNotification` handler (`helius-provider.ts:299–311`), ao payload Prisma e ao cache LRU de dedup (50k entradas). Um peer WSS hostil/comprometido (ou dado corrompido em massa) pode inflar memória do processo e tabela `ObservedEvent`.
@@ -54,29 +53,29 @@
 - Impacto realista: OOM sobre carga adversarial; crescimento descontrolado do DB. Não afeta integridade lógica (dedup continua correto).
 - CWE/OWASP: CWE-770 (Allocation of Resources Without Limits) / OWASP API4:2023.
 - Agente dono sugerido: solana-ingestion (fix: `z.string().min(1).max(128)` para signature/wallet + `.max(2_000_000)` em slot/block_time).
-- Fix verificado em: —
+- Fix verificado em: merge `087a3e3`. Re-teste 2026-09-22: PoC ATAQUE 2 ("signature de 10 MB") agora **rejeitada** (`.max(128)` em signature); `slot` teto 1e10; `block_time` teto 2100. 17/17 PoCs passando pós-fix.
 
 ### RT-005 — Deduplicação concorrente infla contadores (métricas mentirosas)
 - Severidade: LOW
-- Status: OPEN
+- Status: FIXED-VERIFIED
 - Arquivo/linha: `services/data-ingestion/src/dedup-store.ts:73-96`
 - Descrição: `checkAndPersist` libera fast-path antes do insert. Num burst simultâneo (ex.: reconnect storm), 50 chamadas com a mesma key retornam status `'new'` e incrementam `counters.ingested` de 0 → 50, embora apenas 1 persistirá e 49 se tornarão P2002. Contadores `ingested`/`deduplicated` ficam inflados num fator proporcional ao tamanho do burst, degradando o SLO e mascarando DoS real.
 - PoC: `docs/security/red-team/poc/sprint2-ingestion.poc.test.ts` → ATAQUE 3 ("REPLAY CONCORRENTE: 50 chamadas simultâneas").
 - Impacto realista: métricas operacionais erradas durante incidentes; alertas baseados em `ingested`/`rate` enganosos. Não causa dupla persistência (o banco é a autoridade final).
 - CWE/OWASP: CWE-367 (TOCTOU — time-of-check/time-of-use).
 - Agente dono sugerido: solana-ingestion (fix: dedup em fila com in-flight map, ou contabilizar só após insert concluído com sucesso real).
-- Fix verificado em: —
+- Fix verificado em: merge `087a3e3` (in-flight map com cleanup protegido contra sync-throw, semântica de contadores documentada — errors=1, joined=N-1, 1 insert físico). Re-teste: PoC ATAQUE 3 agora mostra `data.length === 1` e `news === 1` em burst de 50.
 
 ### RT-006 — Signature unicode hostil aceita sem allowlist base58 (risco de log poisoning)
 - Severidade: LOW
-- Status: OPEN
+- Status: FIXED-VERIFIED
 - Arquivo/linha: `packages/solana/src/helius-provider.ts:299-311` + `packages/types` (`dedupKey`)
 - Descrição: `logsNotification` aceita qualquer string para `signature` — incluindo chars de controle (`\u0000`, `\u202E` RTL override, emoji). Como a signature vira parte da `dedupKey` e aparece em logs (`pipeline.ts:72`, `logger.warn/error`), isso abre **log injection/forging**: um log forjado pode esconder erros reais ou simular eventos falsos para o operador. Não é escalonado a CRITICAL porque logs não são parsed por sistema crítico (por enquanto).
 - PoC: `docs/security/red-team/poc/sprint2-ingestion.poc.test.ts` → ATAQUE 2 ("caracteres de controle/unicode hostil aceitos").
 - Impacto realista: confusão operacional / esconderijo em log forense. Aumenta risco se os logs forem ingeridos por ferramenta de monitoramento que parseia estrutura.
 - CWE/OWASP: CWE-117 (Improper Output Neutralization for Logs).
 - Agente dono sugerido: solana-ingestion (fix: validar `^[1-9A-HJ-NP-Za-km-z]{86,88}$` para signature).
-- Fix verificado em: —
+- Fix verificado em: merge `087a3e3` (SIGNATURE_REGEX 64–88 base58 aplicado). Re-teste: PoC ATAQUE 2 (\u0000/\u202E/emoji) agora rejeitado. 17/17 PoCs passando.
 
 <!-- Template para novos achados:
 

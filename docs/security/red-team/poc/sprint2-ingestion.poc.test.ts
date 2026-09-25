@@ -55,27 +55,33 @@ describe('ATAQUE 1 — schema zod na borda (rawNotification)', () => {
 });
 
 describe('ATAQUE 2 — DoS via campos sem limite de tamanho', () => {
-  it('VULN CANDIDATO: signature de 10 MB é aceita pelo schema (sem max length)', () => {
+  it('FIXED-VERIFIED (RT-004): signature de 10 MB agora é REJEITADA (.max(128))', () => {
     const huge = 'A'.repeat(10 * 1024 * 1024);
     const r = parseRawNotification({ signature: huge, slot: 1 });
-    // Se true: o schema aceita strings arbitrariamente grandes → memória/DB.
-    expect(r.success).toBe(true); // documenta o comportamento ATUAL (finding)
+    expect(r.success).toBe(false); // fix confirmado: 10MB → rejeitado
   });
 
-  it('signature com caracteres de controle/unicode hostil é aceita', () => {
+  it('FIXED-VERIFIED (RT-006): signature com unicode hostil é REJEITADA (allowlist base58)', () => {
     const hostile = 'sig\u0000\u0001\u202E\u{1F4A3}';
     const r = parseRawNotification({ signature: hostile, slot: 1 });
-    expect(r.success).toBe(true); // finding: sem allowlist de base58
+    expect(r.success).toBe(false); // fix confirmado
   });
 
   it('coerção de slot: string numérica é aceita (comportamento esperado, documentar)', () => {
-    const r = parseRawNotification({ signature: 's', slot: '12345' });
+    const sigOk = '1'.repeat(88);
+    const r = parseRawNotification({ signature: sigOk, slot: '12345' });
     expect(r.success).toBe(true);
     if (r.success) expect(r.data.slot).toBe(12345);
   });
 
   it('coerção de slot com string NÃO numérica é rejeitada (NaN)', () => {
-    expect(parseRawNotification({ signature: 's', slot: 'abc' }).success).toBe(false);
+    const sigOk = '1'.repeat(88);
+    expect(parseRawNotification({ signature: sigOk, slot: 'abc' }).success).toBe(false);
+  });
+
+  it('FIXED-VERIFIED (RT-004): slot acima do teto (1e10) é rejeitado', () => {
+    const sigOk = '1'.repeat(88);
+    expect(parseRawNotification({ signature: sigOk, slot: 10_000_000_001 }).success).toBe(false);
   });
 });
 
@@ -89,23 +95,18 @@ describe('ATAQUE 3 — dedup sob replay / concorrência', () => {
     expect(data.length).toBe(1); // fast-path impediu segundo insert
   });
 
-  it('REPLAY CONCORRENTE: 50 chamadas simultâneas mesma key → apenas 1 insert físico?', async () => {
-    // Simula reconnect storm / redelivery burst: cache fast-path ainda não
-    // populado (primeira chamada awaitando), todas as demais passam direto.
-    const { repo, data } = fakeRepo('ok'); // repo SEM unique constraint → vê tudo
+  it('FIXED-VERIFIED (RT-005): 50 chamadas simultâneas mesma key → APENAS 1 insert físico', async () => {
+    // Após o fix (in-flight map em dedup-store.ts), apenas a primeira chamada
+    // vira líder; as demais aguardam e são classificadas como duplicate.
+    const { repo, data } = fakeRepo('ok'); // repo SEM unique constraint → contaria tudo
     const store = new DedupStore(repo);
     const rec = { signature: 'S', instructionIndex: 0, wallet: 'W', eventType: 'UNKNOWN' };
     const outcomes = await Promise.all(
       Array.from({ length: 50 }, () => store.checkAndPersist('S|0|W', rec)),
     );
     const news = outcomes.filter((o) => o.status === 'new').length;
-    // COMPORTAMENTO ATUAL: sem o banco rejeitando, N inserts concorrentes são feitos.
-    // A camada (b) do banco é a autoridade final — com a unique constraint real,
-    // 49 viram P2002 ('duplicate'). Mas contadores e cache serão inflados as
-    // incorretamente: as chamadas que vieram DEPOIS do 1º insert ainda viram
-    // status 'new' e incrementam `ingested` indevidamente.
-    expect(data.length).toBe(50); // finding: cache não protege burst concorrente (FACT observável)
-    expect(news).toBe(50); // todos reportados como 'new' — métrica `ingested` inflada
+    expect(data.length).toBe(1); // fix confirmado: 1 insert físico
+    expect(news).toBe(1); // fix confirmado: contadores corretos
   });
 
   it('erro transitório de DB NÃO marca cache → retry posterior persiste (correto)', async () => {
@@ -134,18 +135,13 @@ describe('ATAQUE 4 — normalizer com entrada adversarial', () => {
     }
   });
 
-  it('slot extremo: a partir de 2^53+2 a precisão se perde — valores realistas (~3e8) são seguros', () => {
-    // ATAQUE REFUTADO: 2^53 (=9007199254740992) é exatamente representável;
-    // perda real só começa em 9007199254740994. Slots reais Solana ~3e8, ou
-    // seja, ~16 ORDENS de magnitude abaixo do limite. Impacto: nulo hoje.
-    // Registrado em SPRINTS.md como "evasão tentada sem sucesso".
-    const slotUnsafe = Number.MAX_SAFE_INTEGER + 2; // runtime: perde precisão (defesa do lint não se aplica a cálculo)
-    const r = parseRawNotification({
-      signature: 's',
-      slot: slotUnsafe,
-    });
-    expect(r.success).toBe(true); // schema aceita — mas slot desse tamanho é irreal
-    expect(parseRawNotification({ signature: 's', slot: 300_000_000 }).success).toBe(true);
+  it('slot extremo: perda de precisão só começa em 2^53+2 — valor irreal; teto 1e10 chega primeiro (RT-004)', () => {
+    // ATAQUE REFUTADO: perda real só em 9007199254740994, mas o teto do schema
+    // (10_000_000_000) já rejeita muito antes. Slot realista ~3e8 passa ok.
+    const sigOk = '1'.repeat(88);
+    const slotUnsafe = Number.MAX_SAFE_INTEGER + 2;
+    expect(parseRawNotification({ signature: sigOk, slot: slotUnsafe }).success).toBe(false);
+    expect(parseRawNotification({ signature: sigOk, slot: 300_000_000 }).success).toBe(true);
   });
 
   it('block_time no futuro distante / epoch 1 são rejeitados (positive)', () => {
@@ -157,7 +153,8 @@ describe('ATAQUE 4 — normalizer com entrada adversarial', () => {
 
 describe('ATAQUE 5 — normalizedEventSchema (segunda barreira no pipeline)', () => {
   it('rejeita action fora do enum e event_id não-uuid', () => {
-    const base = normalizeRawNotification({ signature: 's', slot: 1 }, 'websocket');
+    const sigOk = '1'.repeat(88);
+    const base = normalizeRawNotification({ signature: sigOk, slot: 1 }, 'websocket');
     expect(base.ok).toBe(true);
     if (!base.ok) return;
     expect(parseNormalizedEvent(base.event).success).toBe(true);

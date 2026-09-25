@@ -35,13 +35,17 @@
 
 ## Veredictos
 
-### Sprint 2 — F1 ingestion (commit `6b1ed97`)
-**Veredicto: LIBERADO**
-- Nenhum finding CRITICAL/HIGH novo.
-- RT-004 (MEDIUM) e RT-005/006 (LOW) são resiliência/robustez — **não bloqueiam a F2**, mas DEVEM entrar na fila de trabalho de solana-ingestion. Alta prioridade para RT-004 antes de F1.5 (enrichment vai aumentar volumes).
+### Sprint 2.1 (re-teste) — merge `087a3e3` (f1-security-fixes-2)
+**Veredicto: LIBERADO para abertura da F2.**
 
-### Sprint 1 — Tooling
-**Veredicto: LIBERADO** (RT-001 FIXED-VERIFIED; RT-002 ACCEPTED; RT-003 FIXED-VERIFIED).
+- RT-004 → **FIXED-VERIFIED** (PoC 10MB rejeitado; limites aplicados).
+- RT-005 → **FIXED-VERIFIED** (PoC burst 50→1 insert físico; contadores honestos: `errors`, `joined`, `deduplicated` documentados).
+- RT-006 → **FIXED-VERIFIED** (PoC unicode hostil rejeitado via base58).
+- Suite do projeto: 51/51 testes, lint 0, typecheck 0, `check:security` limpo.
+- PoCs convertidos em regressão permanente: 17/17 passando em `docs/security/red-team/poc/`.
+
+### Sprint 2 — F1 ingestion (commit `6b1ed97`)
+**Veredicto original: LIBERADO** (com 1 MEDIUM + 2 LOW abertos — resolvidos acima).
 
 <!-- Template:
 

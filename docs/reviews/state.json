@@ -1,30 +1,30 @@
-﻿{
-    "reviewed":  [
-                     "887e5160abe34afa8f947d9d3d028f8f978f1a08",
-                     "6d984e2fba17bc9e75cd9a89b9e6bd9dd104229f",
-                     "0b7f55e5d8810bf2638c221a55592621bdf36c3c",
-                     "609a1a65fb7495e8351d676d5d49a4ef76a054d2",
-                     "ffc094cb0de340613451df935feeebd62c1e2cfc",
-                     "7edc05c736368be87306896333ea6ed3bf65af5a",
-                     "071140969c2b27580f35e7ebf23714b406c200c0",
-                     "06d452b47eeb2a57f9a7503c92db95e9850cc944",
-                     "ea88b4649a2b109ebf0b963b92f289dcc957feb5",
-                     "ed0fc2095bbb9c924cef0b3c62dfc63fa600aee1",
-                     "df980637e823da5b804d18efab1a9a92b8e02562",
-                     "538ed8f1f82de7dce8c9e842a416d702bfa720fa",
-                     "ccd5313e042c9e6ed45480dd91f955fb43ce6624",
-                     "5c84a7419243edc6a3eeb9bfe7725bd320689c8e"
-                 ],
-    "rejected":  [
-                     "cd4468ae7f1ff2d39cdc249c4188a690144bba44",
-                     "cbd49d4fa82a2f97e8e9b134239f9ab282539ac0",
-                     "19ffacc3726223dab70613484bba5432cd289d9c",
-                     "88152bbfafe2705932d909bd7c67571241f4b248",
-                     "afe614cf46169461a019b3a9599f58177ae83e0d",
-                     "dddb30b148daf08293bdf90097f010bb40322218",
-                     "c438ef1c0c9483258896afaaf976f7e67a3404e9",
-                     "2ab477f7dc60361db18e2106cd4b9ef48aea977e",
-                     "38cdaac0b30e0ddf53dab697b7131e4a3499d55c",
-                     "5299d250602fd81b9ac1849c026ec11955411feb"
-                 ]
+{
+  "reviewed": [
+    "887e5160abe34afa8f947d9d3d028f8f978f1a08",
+    "6d984e2fba17bc9e75cd9a89b9e6bd9dd104229f",
+    "0b7f55e5d8810bf2638c221a55592621bdf36c3c",
+    "609a1a65fb7495e8351d676d5d49a4ef76a054d2",
+    "ffc094cb0de340613451df935feeebd62c1e2cfc",
+    "7edc05c736368be87306896333ea6ed3bf65af5a",
+    "071140969c2b27580f35e7ebf23714b406c200c0",
+    "06d452b47eeb2a57f9a7503c92db95e9850cc944",
+    "ea88b4649a2b109ebf0b963b92f289dcc957feb5",
+    "ed0fc2095bbb9c924cef0b3c62dfc63fa600aee1",
+    "df980637e823da5b804d18efab1a9a92b8e02562",
+    "538ed8f1f82de7dce8c9e842a416d702bfa720fa",
+    "ccd5313e042c9e6ed45480dd91f955fb43ce6624",
+    "5c84a7419243edc6a3eeb9bfe7725bd320689c8e",
+    "38cdaac0b30e0ddf53dab697b7131e4a3499d55c"
+  ],
+  "rejected": [
+    "cd4468ae7f1ff2d39cdc249c4188a690144bba44",
+    "cbd49d4fa82a2f97e8e9b134239f9ab282539ac0",
+    "19ffacc3726223dab70613484bba5432cd289d9c",
+    "88152bbfafe2705932d909bd7c67571241f4b248",
+    "afe614cf46169461a019b3a9599f58177ae83e0d",
+    "dddb30b148daf08293bdf90097f010bb40322218",
+    "c438ef1c0c9483258896afaaf976f7e67a3404e9",
+    "2ab477f7dc60361db18e2106cd4b9ef48aea977e",
+    "5299d250602fd81b9ac1849c026ec11955411feb"
+  ]
 }

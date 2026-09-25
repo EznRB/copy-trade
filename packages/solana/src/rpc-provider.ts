@@ -215,13 +215,13 @@ export class RpcProvider {
   }
 
   /**
-   * getTransaction com encoding jsonParsed e maxSupportedTransactionVersion: 0
-   * (FACT: requerido para transações versionadas/v0 com address lookup tables).
+   * getTransaction com encoding jsonParsed e maxSupportedTransactionVersion: 1
+   * (FACT 2026-09-24: versao 1 introduzida pelo runtime; 0 insuficiente). Requerido para transações versionadas/v0 com address lookup tables).
    */
   async getTransaction(signature: string): Promise<unknown | null> {
     return this.call<unknown | null>('getTransaction', [
       signature,
-      { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 },
+      { encoding: 'jsonParsed', maxSupportedTransactionVersion: 1 },
     ]);
   }
 

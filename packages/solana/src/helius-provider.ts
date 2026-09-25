@@ -50,6 +50,8 @@ export interface HeliusProviderOptions {
   backoff?: { baseMs?: number; maxMs?: number; jitterRatio?: number; random?: () => number };
   /** Fábrica de WebSocket injetável (testes). */
   webSocketFactory?: (url: string) => WebSocket;
+  /** Teto de reconexões consecutivas antes de estado terminal (default 50). */
+  maxReconnects?: number;
 }
 
 // FACT (docs Helius, verificado em 2026-09): WSS correto é mainnet.helius-rpc.com
@@ -91,7 +93,11 @@ export class HeliusProvider implements BlockchainDataProvider {
   private readonly wallets = new Set<string>();
 
   private ws: WebSocket | null = null;
-  private subscriptionId: number | null = null;
+  /** Subscriptions por wallet no socket ATUAL (review 2ab477f HIGH-2: sem mapa = leak). */
+  private readonly subscriptionByWallet = new Map<string, number>();
+  /** Contagem de reconexoes consecutivas — teto evita reconnect storm infinita. */
+  private consecutiveReconnects = 0;
+  private readonly maxReconnects: number;
   private nextRequestId = 1;
   private reconnectBackoff: ExponentialBackoff;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -106,6 +112,7 @@ export class HeliusProvider implements BlockchainDataProvider {
     this.pingIntervalMs = options.pingIntervalMs ?? 30_000;
     this.silenceTimeoutMs = options.silenceTimeoutMs ?? 60_000;
     this.backoffOpts = options.backoff;
+    this.maxReconnects = options.maxReconnects ?? 50;
     this.wsFactory = options.webSocketFactory ?? ((url: string) => new WebSocket(url));
     this.reconnectBackoff = new ExponentialBackoff(this.backoffOpts);
     if (options.wsUrl !== undefined) {
@@ -136,12 +143,16 @@ export class HeliusProvider implements BlockchainDataProvider {
 
   connect(): Promise<void> {
     this.closed = false;
+    this.consecutiveReconnects = 0; // reset explicito no boot
     return this.openSocket();
   }
 
   async subscribeWallets(wallets: string[]): Promise<void> {
+    // Base58 estrito (32-44): formato errado é VALIDATION_ERROR na borda,
+    // nunca chega ao wire (review: "abc" passava com a checagem antiga).
+    const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
     for (const w of wallets) {
-      if (typeof w !== 'string' || w.length === 0) {
+      if (typeof w !== 'string' || !B58.test(w)) {
         throw new ClassifiedError('VALIDATION_ERROR', 'wallet inválida em subscribeWallets');
       }
       this.wallets.add(w);
@@ -154,10 +165,12 @@ export class HeliusProvider implements BlockchainDataProvider {
   async close(): Promise<void> {
     this.closed = true;
     this.clearTimers();
+    // logsUnsubscribe de todas as subscriptions ativas (review HIGH-2).
+    this.sendAllUnsubscribes();
     const ws = this.ws;
     this.ws = null;
     this.connected = false;
-    this.subscriptionId = null;
+    this.subscriptionByWallet.clear();
     if (ws) {
       await new Promise<void>((resolve) => {
         ws.once('close', () => resolve());
@@ -176,18 +189,40 @@ export class HeliusProvider implements BlockchainDataProvider {
 
   private openSocket(): Promise<void> {
     return new Promise((resolve, reject) => {
+      // Anti-órfão (review HIGH-2): fecha socket anterior ANTES de criar o novo.
+      const oldWs = this.ws;
+      if (oldWs) {
+        try {
+          oldWs.removeAllListeners();
+          oldWs.close();
+        } catch {
+          /* socket já morto */
+        }
+      }
       const ws = this.wsFactory(this.wsUrl);
       this.ws = ws;
 
       const onOpen = (): void => {
-        this.connected = true;
         this.lastMessageAt = Date.now();
         this.reconnectBackoff.reset();
-        this.startHeartbeat();
+        this.consecutiveReconnects = 0; // sucesso reseta a serie de falhas
         this.logger.info('wss conectado', { urlHost: safeHost(this.wsUrl) });
+        // connected só é PÚBLICO após todas as subscriptions confirmadas; falha
+        // parcial não deixa socket aberto com subs vivas (fecha e rejeita).
         void this.sendLogsSubscribe()
-          .then(() => resolve())
-          .catch((err: unknown) => reject(err));
+          .then(() => {
+            this.connected = true;
+            this.startHeartbeat();
+            resolve();
+          })
+          .catch((err: unknown) => {
+            try {
+              ws.close();
+            } catch {
+              /* noop */
+            }
+            reject(err);
+          });
       };
 
       ws.once('open', onOpen);
@@ -205,7 +240,7 @@ export class HeliusProvider implements BlockchainDataProvider {
       });
       ws.on('close', (code: number, reason: Buffer) => {
         this.connected = false;
-        this.subscriptionId = null;
+        this.subscriptionByWallet.clear();
         this.clearTimers();
         this.logger.warn('wss fechado', { code, reason: reason.toString() });
         this.scheduleReconnect();
@@ -216,18 +251,41 @@ export class HeliusProvider implements BlockchainDataProvider {
     });
   }
 
-  private sendLogsSubscribe(): Promise<void> {
-    if (this.wallets.size === 0 || this.ws === null) return Promise.resolve();
+  /** Logs de unsubscribe (fire-and-forget) — chamado antes de fechar socket. */
+  private sendAllUnsubscribes(): void {
+    const ws = this.ws;
+    if (!ws) return;
+    for (const subId of this.subscriptionByWallet.values()) {
+      try {
+        ws.send(
+          JSON.stringify({ jsonrpc: '2.0', id: this.nextRequestId++, method: 'logsUnsubscribe', params: [subId] }),
+        );
+      } catch (err) {
+        this.logger.warn('logsUnsubscribe falhou', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  }
+
+  private async sendLogsSubscribe(): Promise<void> {
+    if (this.wallets.size === 0 || this.ws === null) return;
+    // FACT (Helius, observado 2026-09-24): logsSubscribe aceita apenas 1
+    // endereco em `mentions` neste plano. Resolver: uma subscription por
+    // endereco (Promise.all; se alguma falhar, o connect falha de forma
+    // audivel e a rotina de reconnect refaz).
+    const wallets = [...this.wallets];
+    await Promise.all(wallets.map((wallet) => this.sendSingleSubscribe(wallet)));
+  }
+
+  private sendSingleSubscribe(wallet: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const id = this.nextRequestId++;
       const message = JSON.stringify({
         jsonrpc: '2.0',
         id,
         method: 'logsSubscribe',
-        params: [
-          { mentions: [...this.wallets] },
-          { commitment: this.commitment },
-        ],
+        params: [{ mentions: [wallet] }, { commitment: this.commitment }],
       });
       const ws = this.ws;
       if (!ws) {
@@ -239,16 +297,14 @@ export class HeliusProvider implements BlockchainDataProvider {
           reject(new ClassifiedError('RPC_ERROR', `logsSubscribe falhou: ${err.message}`, err));
           return;
         }
-        // Confirmação chega como resposta JSON-RPC com result = subscription id;
-        // resolução ocorre em handleMessage via pending map simplificado:
-        this.pendingSubscribes.set(id, { resolve, reject });
+        this.pendingSubscribes.set(id, { resolve, reject, wallet });
       });
     });
   }
 
   private readonly pendingSubscribes = new Map<
     number,
-    { resolve: () => void; reject: (e: Error) => void }
+    { resolve: () => void; reject: (e: Error) => void; wallet?: string }
   >();
 
   private handleMessage(data: unknown): void {
@@ -285,10 +341,14 @@ export class HeliusProvider implements BlockchainDataProvider {
           ),
         );
       } else {
-        if (typeof parsed.result === 'number') this.subscriptionId = parsed.result;
+        const subId = typeof parsed.result === 'number' ? parsed.result : null;
+        if (subId !== null && pending?.wallet) {
+          this.subscriptionByWallet.set(pending.wallet, subId);
+        }
         this.logger.info('logsSubscribe ativo', {
-          subscriptionId: this.subscriptionId,
-          wallets: this.wallets.size,
+          wallet: pending?.wallet,
+          subscriptionId: subId,
+          activeSubscriptions: this.subscriptionByWallet.size,
         });
         pending?.resolve();
       }
@@ -378,8 +438,23 @@ export class HeliusProvider implements BlockchainDataProvider {
 
   private scheduleReconnect(): void {
     if (this.closed || this.reconnectTimer !== null) return;
+    // Teto de reconnect storm (review HIGH-2): passar do limite vira estado
+    // terminal — logável pela camada superior; não gera loop infinito.
+    if (this.consecutiveReconnects >= this.maxReconnects) {
+      this.logger.error('wss reconnects esgotados — estado terminal (restart manual necessário)', {
+        errorClass: 'RPC_ERROR',
+        maxReconnects: this.maxReconnects,
+      });
+      this.closed = true;
+      return;
+    }
+    this.consecutiveReconnects++;
     const delay = this.reconnectBackoff.nextDelay();
-    this.logger.info('wss reconnect agendado', { delayMs: delay });
+    this.logger.info('wss reconnect agendado', {
+      delayMs: delay,
+      attempt: this.consecutiveReconnects,
+      maxReconnects: this.maxReconnects,
+    });
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       if (this.closed) return;

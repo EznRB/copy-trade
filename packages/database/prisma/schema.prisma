@@ -1,5 +1,5 @@
-// @ct/database — Prisma schema v1 (Fases 1–9)
-// Fonte de verdade para persistência. Nunca adicionar secrets aqui (somente env refs).
+// @ct/database ? Prisma schema v1 (Fases 1?9)
+// Fonte de verdade para persist?ncia. Nunca adicionar secrets aqui (somente env refs).
 
 datasource db {
   provider = "postgresql"
@@ -25,7 +25,7 @@ model Wallet {
   metrics        WalletMetric[]
   trades         WalletTrade[]
   clusterMembers WalletClusterMember[]
-  // ObservedEvent usa `wallet` como address (String), não FK — sem relation aqui.
+  // ObservedEvent usa `wallet` como address (String), n?o FK ? sem relation aqui.
 }
 
 model WalletMetric {
@@ -130,7 +130,7 @@ model Creator {
 // ---------------------------------------------------------------------------
 
 model ObservedEvent {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   signature        String
   instructionIndex Int
   wallet           String
@@ -138,14 +138,27 @@ model ObservedEvent {
   slot             BigInt?
   blockTime        DateTime?
   payload          Json?
-  receivedAt       DateTime @default(now())
+  receivedAt       DateTime  @default(now())
 
-  // Chave de dedup (idempotência — AGENTS.md regra 6)
+  // Enrichment F1.5 (decoder pump.fun/PumpSwap) ? tudo nullable:
+  // eventos antigos e nao decodificaveis ficam null/UNKNOWN, nunca inferidos.
+  direction      String? // 'buy' | 'sell'
+  amountSol      Decimal?
+  tokenAmount    Decimal?
+  mint           String?
+  counterparty   String? // bonding curve (? curve) ou pool PumpSwap
+  enrichSource   String? // ex.: 'pump-decoder-v1'
+  enrichedAt     DateTime?
+  enrichAttempts Int      @default(0)
+
+  // Chave de dedup (idempotencia - AGENTS.md regra 6)
   @@unique([signature, instructionIndex, wallet])
+  @@index([mint])
+  @@index([eventType])
 }
 
 // ---------------------------------------------------------------------------
-// Signals (Fases 4–7)
+// Signals (Fases 4?7)
 // ---------------------------------------------------------------------------
 
 model Signal {
@@ -176,7 +189,7 @@ model SignalFeature {
 }
 
 // ---------------------------------------------------------------------------
-// Execution (Fases 9–10) — nunca habilitar LIVE sem aprovação humana
+// Execution (Fases 9?10) ? nunca habilitar LIVE sem aprova??o humana
 // ---------------------------------------------------------------------------
 
 model Order {
@@ -233,7 +246,7 @@ model ExecutionMetric {
 }
 
 // ---------------------------------------------------------------------------
-// Backtest / ML (Fases 5–7)
+// Backtest / ML (Fases 5?7)
 // ---------------------------------------------------------------------------
 
 model BacktestRun {

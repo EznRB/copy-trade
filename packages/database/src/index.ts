@@ -26,9 +26,16 @@ export type * from '@prisma/client';
 export {
   insertObservedEvent,
   existsObservedEvent,
+  markEnriched,
+  markUndecodable,
+  findUnenriched,
+  incrementEnrichAttempt,
   type InsertResult,
   type ObservedEventInsertData,
   type ObservedEventDelegate,
+  type EnrichmentData,
+  type UnenrichedRow,
+  type ObservedEventEnrichDelegate,
 } from './repositories/observed-events.js';
 export {
   recordSystemEvent,

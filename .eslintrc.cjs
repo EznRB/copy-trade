@@ -27,5 +27,6 @@ module.exports = {
       },
     ],
   },
-  ignorePatterns: ['dist/', 'node_modules/', 'coverage/', '*.js', '!.*.cjs', 'ml/', '.next/'],
+  ignorePatterns: [
+    'packages/pumpfun/src/generated/**','dist/', 'node_modules/', 'coverage/', '*.js', '!.*.cjs', 'ml/', '.next/'],
 };

@@ -4,6 +4,51 @@
 
 ---
 
+## 2026-09-25 — F1.5 round 2 (review rejeitado corrigido)
+
+Novos commits na branch sprint/f1-5-enrichment (aguardando REVIEW de cada um; merge so com todos APROVADOS):
+- `fd6a5a6` — testes dos 4 metodos de enrichment (repos) + guarda TOCTOU (updateMany com enrichedAt IS NULL) + schema.prisma ASCII.
+- `cc64b8d` — testes do helius-provider (per-wallet subs, base58, unsubscribe, anti-orfao, reconnect storm) + maxReconnects terminal.
+- `6cd436b` — fixtures rigorosos campo-a-campo; decoder corrigido: base=wSOL inverte lado do token; divergencias listadas.
+- `799d048`/`812ef1a` — instance lock com staleness por idade + lint fix.
+
+Gates na branch agora: lint 0 · typecheck 0 · test 105/105 · check:secrets OK. Fixtures: sample=10, pumpswap=9, perfectMatches=5, divergences=5 (semanticas, listadas).
+
+---
+
+## 2026-09-24 — F1.5 (enrichment) IMPLEMENTADA — aguardando review/SEC/dono
+
+### O que foi feito (branch `sprint/f1-5-enrichment`)
+
+- `5c84a74` — débitos ADR-024: alias ADR-014→ADR-024 nos comentários; **retenção RAW virou opt-in** (purge nunca default-on).
+- `88152bb` — schema `ObservedEvent` com enrichment (direction/amountSol/tokenAmount/mint/counterparty/enrichSource/enrichedAt/enrichAttempts) + migration offline + repositories (markEnriched/findUnenriched/incrementEnrichAttempt/markUndecodable).
+- `dddb30b` — **decoder codama** a partir da IDL oficial pump.fun/PumpSwap (`pump-public-docs @81091419`): `decodePumpInstruction`, 14/14 testes adversariais; script `codama.pump.mjs` reproduzível (com postprocess documentado) + fix ESM pós-build.
+- `c438ef1` — `enricher.ts` + `enrich-runner.ts` + wiring no boot do data-ingestion; 85/85 testes no monorepo.
+- `2ab477f` — fixes de runtime descobertos: `maxSupportedTransactionVersion: 1`; `logsSubscribe` 1-endereço; fixtures reais 10/10 vs Helius Enhanced (8 PumpSwap + 2 curve).
+- `38cdaac` — higiene (locks fora do repo) + artefatos.
+
+### Métricas do gate (evidência em `docs/research/f15/`)
+
+- Fixtures: 10/10 1:1 com Helius Enhanced na amostragem final (16/16 na rodada inicial sem AMM). mismatch=0.
+- Backfill one-shot 10k: enriched=1914 (**19.1%**), undecodable=8086 (transfers/creates sem swap — correto), errors=0, elapsed ~69min.
+
+### Bugs corrigidos no caminho (todos no code + ADR-025)
+
+1. `maxSupportedTransactionVersion` 0→1 (tx v1 existe desde runtime atual).
+2. Helius free logsSubscribe aceita 1 endereço → provider agora 1 sub/endereço.
+3. Enhanced API: endpoint correto é `api-mainnet.helius-rpc.com/v0/transactions?api-key=` (sem `/` antes de `?`); `api.helius.dev` não resolve no DNS local.
+4. Codama: awaits + flatten + @ts-nocheck apenas nos gerados.
+
+### NÃO-Fecho da fase
+
+Conforme instrução: a F1.5 **não é concluída por mim**. Próximos passos: REVIEW automático dos SHAs → SEC re-teste (PoCs) → dono aprova merge/evolução para F2.
+
+### Próximo passo
+
+Sprint F2 (wallet monitor) pode começar do enricher pronto; pendências não-bloqueantes: retenção opt-in permanece desligada por padrão (ADR-024), credenciais Helius continuam a aguardar rotação.
+
+---
+
 ## 2026-09-23 — F1 + sprint de segurança FORMALMENTE ENCERRADAS
 
 ### Estado

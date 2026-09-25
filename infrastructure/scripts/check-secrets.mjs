@@ -41,6 +41,12 @@ function walk(dir) {
 
     if (allowExtensions.some((e) => entry.endsWith(e))) continue;
     if (skipFiles.has(entry)) continue;
+    // Relatorios de evidencia (docs/research/**/*.json) contem dados on-chain
+    // publicos (signatures/base58) por definicao — nao sao secrets.
+    const relForExempt = relative(repoRoot, full).replace(/\\/g, "/");
+    const isResearchData =
+      relForExempt.startsWith("docs/research/") && relForExempt.endsWith(".json");
+    if (isResearchData) continue;
     const ext = extname(entry).toLowerCase();
     const isEnv = entry.startsWith(".env") && entry !== ".env.example";
     if (!isEnv && !textExtensions.has(ext)) continue;

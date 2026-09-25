@@ -1,0 +1,267 @@
+{
+  "at": "2026-09-25T04:01:22.876Z",
+  "sample": 10,
+  "pumpswapFixtures": 9,
+  "pumpFixtures": 1,
+  "perfectMatches": 5,
+  "divergencesCount": 5,
+  "probes": {
+    "decoded": 10,
+    "undecodable": 45,
+    "errors": 58
+  },
+  "divergences": [
+    {
+      "signature": "18gsjP9rGMfZfEtspzW3wo217qfCMLMurP1RKwoiawzozugUnA3E1Mv2LCmKwfyjcy2C5CXCfwjXCLNJrNUY36s",
+      "kind": "pumpswap_sell",
+      "mismatches": [
+        "mintPresent"
+      ],
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "44xtWfqJHffGtQCDPVsrNSUQsZHqEuMc4ktNowgVpump",
+        "user": "DDHT3naWyb5s5vpbtRfoQtyXJGR7vtbQKvspA5FwusYw",
+        "counterparty": "GsTVhFUwk6hwH9PaQipLna9KsXfu4h8ENUsCpB8wdtHG",
+        "tokenAmount": "414750041004",
+        "solAmount": "727895025"
+      },
+      "heliusDir": null,
+      "feePayer": "DDHT3naWyb5s5vpbtRfoQtyXJGR7vtbQKvspA5FwusYw"
+    },
+    {
+      "signature": "tg3pusCqXV29Pop4pCybRKVoUWJoYXqCYoiUAdstCtazFLSVBTNh4fytii9MLBwmGgjLCTpY7org9QDSPAimzJY",
+      "kind": "pumpswap_sell",
+      "mismatches": [
+        "directionEq"
+      ],
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+        "user": "AcKSYGckD3RAAB9yhA1dVm6C9taSNMmEyzCZEbYoWiWS",
+        "counterparty": "2uF4Xh61rDwxnG9woyxsVQP7zuA6kLFpb3NvnRQeoiSd",
+        "tokenAmount": null,
+        "solAmount": "21529728095"
+      },
+      "heliusDir": "buy",
+      "feePayer": "AcKSYGckD3RAAB9yhA1dVm6C9taSNMmEyzCZEbYoWiWS"
+    },
+    {
+      "signature": "3ipBKg9Hf5oemkQc2Ftm7zBiCxkjhxZ9YW61Bgu491KYQCeFmotzzkThnK23EmGWFCw5NB2Gb7shyE2u6fqpuhs6",
+      "kind": "pumpswap_sell",
+      "mismatches": [
+        "mintPresent"
+      ],
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "Bg75GaeTN7uVqtUEsquh61hwENeaA8TD5K8HwX4Lfomo",
+        "user": "Dx7VEnLELVkXBiVYe6nqN62zJbYw9xAf9Jq5LpatZCCT",
+        "counterparty": "EJXEbdsXFJ9AFEu1EqNHycfAEoBN7BFtfLVWx4DsEWUG",
+        "tokenAmount": "379246310276",
+        "solAmount": "1040652818"
+      },
+      "heliusDir": null,
+      "feePayer": "Dx7VEnLELVkXBiVYe6nqN62zJbYw9xAf9Jq5LpatZCCT"
+    },
+    {
+      "signature": "5sCEF7pq4YpiVJBNDXe1G9zQv5PfszLRvg1V95t5UiRsBLLKgc2JK68ojnRToz9VD4F1Dx1xwPqfkc7PK5ViLcPT",
+      "kind": "pumpswap_buy",
+      "mismatches": [
+        "mintPresent"
+      ],
+      "local": {
+        "kind": "pumpswap_buy",
+        "direction": "buy",
+        "mint": "Bg75GaeTN7uVqtUEsquh61hwENeaA8TD5K8HwX4Lfomo",
+        "user": "41n8gyoVAuDjZdUeHRGrPscG2DzJawDHpa1Y6VLV4VqJ",
+        "counterparty": "EJXEbdsXFJ9AFEu1EqNHycfAEoBN7BFtfLVWx4DsEWUG",
+        "tokenAmount": "536446568993",
+        "solAmount": "686657357"
+      },
+      "heliusDir": null,
+      "feePayer": "41n8gyoVAuDjZdUeHRGrPscG2DzJawDHpa1Y6VLV4VqJ"
+    },
+    {
+      "signature": "2FMmRXtRiyVbMV4Csv3Zz6XUcJmYqwGcCuJ1WrSUybRTM1iJGauqZ3qbyD7q3afVZzVJJcwcTBcACmT8SEESybTt",
+      "kind": "pumpswap_sell",
+      "mismatches": [
+        "userEq"
+      ],
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "CBXs6RDnfV93SvsAR9dUqeFj3tuFEM9bNJisnJ8Lpump",
+        "user": "Gx32W57YqGYbrF7JQqyvqJAsSKm3BPxXo3gynguf3DsL",
+        "counterparty": "E36fi2hUsjkiLJSLAXHwL6FSFnywEyqJ1GTM845rAL52",
+        "tokenAmount": "40760213608",
+        "solAmount": "0"
+      },
+      "heliusDir": "sell",
+      "feePayer": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51"
+    }
+  ],
+  "results": [
+    {
+      "signature": "18gsjP9rGMfZfEtspzW3wo217qfCMLMurP1RKwoiawzozugUnA3E1Mv2LCmKwfyjcy2C5CXCfwjXCLNJrNUY36s",
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "44xtWfqJHffGtQCDPVsrNSUQsZHqEuMc4ktNowgVpump",
+        "user": "DDHT3naWyb5s5vpbtRfoQtyXJGR7vtbQKvspA5FwusYw",
+        "counterparty": "GsTVhFUwk6hwH9PaQipLna9KsXfu4h8ENUsCpB8wdtHG",
+        "tokenAmount": "414750041004",
+        "solAmount": "727895025"
+      },
+      "heliusDir": null,
+      "feePayer": "DDHT3naWyb5s5vpbtRfoQtyXJGR7vtbQKvspA5FwusYw",
+      "mismatches": [
+        "mintPresent"
+      ]
+    },
+    {
+      "signature": "4pc34pU1bwCks9FPReyEu4y5WbVFjN36thGgN6rnBHASLmjwsd9xqNhoKAbCcragLGMCWR8ssFNhFdPvdcpd1Pod",
+      "local": {
+        "kind": "pumpswap_buy",
+        "direction": "buy",
+        "mint": "9B96MFgb3LVZdvXxHadtUKN2jK39amvHbuchZMTnwucH",
+        "user": "FMJFEan1xKY7fu71Xxst61g1eR5RWLT7VWfamiy8qotZ",
+        "counterparty": "6ugmRe8AVEWq543uC1n6d9hsw7WuercBJ7J9HEdHg1HM",
+        "tokenAmount": null,
+        "solAmount": "126330"
+      },
+      "heliusDir": "buy",
+      "feePayer": "FMJFEan1xKY7fu71Xxst61g1eR5RWLT7VWfamiy8qotZ",
+      "mismatches": []
+    },
+    {
+      "signature": "tg3pusCqXV29Pop4pCybRKVoUWJoYXqCYoiUAdstCtazFLSVBTNh4fytii9MLBwmGgjLCTpY7org9QDSPAimzJY",
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+        "user": "AcKSYGckD3RAAB9yhA1dVm6C9taSNMmEyzCZEbYoWiWS",
+        "counterparty": "2uF4Xh61rDwxnG9woyxsVQP7zuA6kLFpb3NvnRQeoiSd",
+        "tokenAmount": null,
+        "solAmount": "21529728095"
+      },
+      "heliusDir": "buy",
+      "feePayer": "AcKSYGckD3RAAB9yhA1dVm6C9taSNMmEyzCZEbYoWiWS",
+      "mismatches": [
+        "directionEq"
+      ]
+    },
+    {
+      "signature": "3ipBKg9Hf5oemkQc2Ftm7zBiCxkjhxZ9YW61Bgu491KYQCeFmotzzkThnK23EmGWFCw5NB2Gb7shyE2u6fqpuhs6",
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "Bg75GaeTN7uVqtUEsquh61hwENeaA8TD5K8HwX4Lfomo",
+        "user": "Dx7VEnLELVkXBiVYe6nqN62zJbYw9xAf9Jq5LpatZCCT",
+        "counterparty": "EJXEbdsXFJ9AFEu1EqNHycfAEoBN7BFtfLVWx4DsEWUG",
+        "tokenAmount": "379246310276",
+        "solAmount": "1040652818"
+      },
+      "heliusDir": null,
+      "feePayer": "Dx7VEnLELVkXBiVYe6nqN62zJbYw9xAf9Jq5LpatZCCT",
+      "mismatches": [
+        "mintPresent"
+      ]
+    },
+    {
+      "signature": "5sCEF7pq4YpiVJBNDXe1G9zQv5PfszLRvg1V95t5UiRsBLLKgc2JK68ojnRToz9VD4F1Dx1xwPqfkc7PK5ViLcPT",
+      "local": {
+        "kind": "pumpswap_buy",
+        "direction": "buy",
+        "mint": "Bg75GaeTN7uVqtUEsquh61hwENeaA8TD5K8HwX4Lfomo",
+        "user": "41n8gyoVAuDjZdUeHRGrPscG2DzJawDHpa1Y6VLV4VqJ",
+        "counterparty": "EJXEbdsXFJ9AFEu1EqNHycfAEoBN7BFtfLVWx4DsEWUG",
+        "tokenAmount": "536446568993",
+        "solAmount": "686657357"
+      },
+      "heliusDir": null,
+      "feePayer": "41n8gyoVAuDjZdUeHRGrPscG2DzJawDHpa1Y6VLV4VqJ",
+      "mismatches": [
+        "mintPresent"
+      ]
+    },
+    {
+      "signature": "5vp2E7eyStjKNicJd3BuFduWUjq2NADkkFhMuFT4UQy2TNz6owAhPzVefBpsrYp9WpWvpdABNTMgMeqs1LFWQDib",
+      "local": {
+        "kind": "pump_sell",
+        "direction": "sell",
+        "mint": "Ee1gKy1bECuyZ4a7Lb2iPAyyY4PR7pKajbG8s2QBpump",
+        "user": "9qL4hMBNUo7qeC4CvUDGbbzb8nP71EgpMHfen68Awpmv",
+        "counterparty": "4MgtDTrp4qC3dZ2LVBDp9T9hQi3sQCSDZHXa51pucSLV",
+        "tokenAmount": "322096783474",
+        "solAmount": "1"
+      },
+      "heliusDir": "sell",
+      "feePayer": "9qL4hMBNUo7qeC4CvUDGbbzb8nP71EgpMHfen68Awpmv",
+      "mismatches": []
+    },
+    {
+      "signature": "aDvmn3XKqSbh7RkfowUzbA1tkeJThA7BCFc8akeJvFATFkUxX5MBUDJZ9ZpUrRW4QbznTzxBQAGmwVhNfmJmAnZ",
+      "local": {
+        "kind": "pumpswap_buy",
+        "direction": "buy",
+        "mint": "8sRNE1WxASDG7mX1pjhVdt3S3i274G193x19bm8kUu5a",
+        "user": "ETqHCncrjHGjCnzuZ18sKqEutMWiVNmTjZjJnatngc3k",
+        "counterparty": "HRibzckmd2m6mx2eh9NB1WnVHcSUgNq8Dfe8JbTTtYoA",
+        "tokenAmount": null,
+        "solAmount": "28836"
+      },
+      "heliusDir": "buy",
+      "feePayer": "ETqHCncrjHGjCnzuZ18sKqEutMWiVNmTjZjJnatngc3k",
+      "mismatches": []
+    },
+    {
+      "signature": "2yjJC3farByjRtbX7HgsJhcSTXjcz1qqBBJ5Vq3r5os2mbsQDDzQreSxs76W3ud9cTtLgMeP2T99afwNUNgQnHhY",
+      "local": {
+        "kind": "pumpswap_buy",
+        "direction": "buy",
+        "mint": "qSzFKNg8tqZHenMp4hsUkMBRrVMfyagyBaZLFmKpump",
+        "user": "5Ru8VsUChXeGmsthcDf95bh5ua6daucQfMhBC5tGw8xM",
+        "counterparty": "7QMm9LmwnoCjxf3bZxkKNy5cxLtEWbyYRnAMBgwZPoKx",
+        "tokenAmount": "222430",
+        "solAmount": "412706"
+      },
+      "heliusDir": "buy",
+      "feePayer": "5Ru8VsUChXeGmsthcDf95bh5ua6daucQfMhBC5tGw8xM",
+      "mismatches": []
+    },
+    {
+      "signature": "2FMmRXtRiyVbMV4Csv3Zz6XUcJmYqwGcCuJ1WrSUybRTM1iJGauqZ3qbyD7q3afVZzVJJcwcTBcACmT8SEESybTt",
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "CBXs6RDnfV93SvsAR9dUqeFj3tuFEM9bNJisnJ8Lpump",
+        "user": "Gx32W57YqGYbrF7JQqyvqJAsSKm3BPxXo3gynguf3DsL",
+        "counterparty": "E36fi2hUsjkiLJSLAXHwL6FSFnywEyqJ1GTM845rAL52",
+        "tokenAmount": "40760213608",
+        "solAmount": "0"
+      },
+      "heliusDir": "sell",
+      "feePayer": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51",
+      "mismatches": [
+        "userEq"
+      ]
+    },
+    {
+      "signature": "rriTinxpNMve7NmhUueN5ni1uhdvyk7h6XHKqz5TePGdgRwHgpxaDBeLcJEs2Zs5M6AfjoFBfdXV3EUxiWVPU1p",
+      "local": {
+        "kind": "pumpswap_sell",
+        "direction": "sell",
+        "mint": "2DznHsR5j6XHARnTVGubwAXxfmF9aQ8Pwwu3TN7ppump",
+        "user": "tQRN3NXgu8hFy1Rcx1ArMThR7SEdqZkCeam86KNCa9X",
+        "counterparty": "2d77EYAt6WeCNwsjEior7N91mw1uj7tayXtVMub7mXcQ",
+        "tokenAmount": "74193",
+        "solAmount": "211299"
+      },
+      "heliusDir": "sell",
+      "feePayer": "tQRN3NXgu8hFy1Rcx1ArMThR7SEdqZkCeam86KNCa9X",
+      "mismatches": []
+    }
+  ]
+}

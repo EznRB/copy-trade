@@ -1,23 +1,24 @@
-{
-  "name": "@ct/service-data-ingestion",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "main": "./dist/main.js",
-  "scripts": {
-    "build": "tsc -b"
-  },
-  "dependencies": {
-    "@ct/config": "*",
-    "@ct/database": "*",
-    "@ct/logging": "*",
-    "@ct/solana": "*",
-    "@ct/types": "*",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "fast-check": "^3.19.0",
-    "typescript": "^5.4.5",
-    "vitest": "^3.2.7"
-  }
+﻿{
+    "name":  "@ct/service-data-ingestion",
+    "version":  "0.1.0",
+    "private":  true,
+    "type":  "module",
+    "main":  "./dist/main.js",
+    "scripts":  {
+                    "build":  "tsc -b"
+                },
+    "dependencies":  {
+                         "@ct/config":  "*",
+                         "@ct/database":  "*",
+                         "@ct/logging":  "*",
+                         "@ct/solana":  "*",
+                         "@ct/types":  "*",
+                         "zod":  "^3.23.8",
+                         "@ct/pumpfun":  "*"
+                     },
+    "devDependencies":  {
+                            "fast-check":  "^3.19.0",
+                            "typescript":  "^5.4.5",
+                            "vitest":  "^3.2.7"
+                        }
 }

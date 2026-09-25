@@ -1,0 +1,40 @@
+{
+  "seen": 10000,
+  "enriched": 1914,
+  "undecodable": 8086,
+  "retried": 0,
+  "elapsedSec": "4139.2",
+  "coveragePct": "19.1%",
+  "enrichSourceBreakdown": [
+    {
+      "_count": {
+        "_all": 675
+      },
+      "enrichSource": "pump-decoder-v1:pump_buy"
+    },
+    {
+      "_count": {
+        "_all": 1580
+      },
+      "enrichSource": "pump-decoder-v1:pump_sell"
+    },
+    {
+      "_count": {
+        "_all": 10
+      },
+      "enrichSource": "pump-decoder-v1:pumpswap_sell"
+    },
+    {
+      "_count": {
+        "_all": 8250
+      },
+      "enrichSource": "undecodable:no-decodable-instruction"
+    },
+    {
+      "_count": {
+        "_all": 1923605
+      },
+      "enrichSource": null
+    }
+  ]
+}

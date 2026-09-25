@@ -16,6 +16,14 @@
 | F9   | Execution            | ExecutionProvider production-ready (ainda desligado)                                    | Security review aprovado; fault injection passa                                                           |
 | F10  | Live controlado      | capital mínimo, todas as travas                                                         | **Aprovação humana explícita** + F1–F9 resolvidos                                                         |
 
+| F1.5 | Enrichment (decode BUY/SELL) **IMPLEMENTADA — aguardando review** | Decoder codama oficial + fixtures 1:1 vs Helius + backfill 10k | Fixtures: 10/10 com Helius (8 PumpSwap, 2 curve); backfill: 19.1% cobertura em 10k (esperado: maioria transfer/create); NÃO fecha sozinho — SEC revisa e dono aprova |
+
+### Gate F1.5 (evidência em `docs/research/f15/`)
+
+- Persistência: `ObservedEvent` com direction/amountSol/tokenAmount/mint/counterparty/enrichSource/enrichedAt/enrichAttempts (migration `20260924142844_f15_enrichment`).
+- Fixtures: `fixtures-report.json` (16/16 vs Enhanced; rodada final 10/10 com 8 AMM).
+- Backfill: `backfill-report.json` (10k em ~69min, 0 erros, 19.1% covered).
+
 ## Critérios transversais (§141)
 
 - F1→F2: ingestão confiável. F2→F3: dados persistidos. F3→F4: métricas reproduzíveis. F4→F5: backtest sem leakage. F5→F6: dataset com qualidade. F6→F8: estabilidade. LIVE: somente com aprovação explícita.

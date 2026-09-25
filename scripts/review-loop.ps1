@@ -95,9 +95,11 @@ function Invoke-Gates([string]$workdir) {
 
 function New-ReviewWorktree([string]$sha) {
     # Worktree isolado (detached) por commit — sem race com o worktree do DEV.
+    # PS5.1: stderr nativo vira excecao com EAP=Stop; usar cmd /c em todos os git.
     $wt = Join-Path $RepoRoot ".review-wt"
-    if (Test-Path $wt) { git worktree remove $wt --force 2>$null }
-    git worktree add --detach $wt $sha 2>$null | Out-Null
+    if (Test-Path $wt) { cmd /c "git worktree remove `"$wt`" --force >NUL 2>&1" }
+    cmd /c "git worktree add --detach `"$wt`" $sha >NUL 2>&1" | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "git worktree add falhou para $sha" }
     return $wt
 }
 
@@ -134,8 +136,8 @@ function Invoke-AutoFix([string]$sha, [string]$branch, [string]$reviewFile) {
     git branch -f $fixBranch $sha | Out-Null
     $prompt = "Corrija, SOMENTE neste diretorio de trabalho, os achados do review do commit $sha (anexados em arquivo). Regras: correcao MINIMA; nao altere logica de testes; rode npm run lint, npm run typecheck, npm test; ao terminar com gates passando, faca UM commit com mensagem 'fix(review): corrige achados de $sha'. NUNCA altere TRADING_MODE, LIVE_TRADING_ENABLED ou constantes MAX_*. NAO edite arquivos fora deste diretorio."
     $wt = Join-Path $RepoRoot ".review-wt"
-    if (Test-Path $wt) { git worktree remove $wt --force 2>$null }
-    git worktree add $wt $fixBranch 2>$null | Out-Null
+    if (Test-Path $wt) { cmd /c "git worktree remove `"$wt`" --force >NUL 2>&1" }
+    cmd /c "git worktree add `"$wt`" $fixBranch >NUL 2>&1" | Out-Null
     Push-Location $wt
     $prev = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
@@ -147,8 +149,8 @@ function Invoke-AutoFix([string]$sha, [string]$branch, [string]$reviewFile) {
         Pop-Location
     }
     # limpeza do worktree temporario (branch review-fix/* permanece)
-    git worktree remove $wt --force 2>$null
-    git worktree prune
+    cmd /c "git worktree remove `"$wt`" --force >NUL 2>&1"
+    cmd /c "git worktree prune >NUL 2>&1"
     return $out
 }
 
@@ -188,8 +190,8 @@ do {
                 $gates = Invoke-Gates -workdir $wt
                 $reviewOut = Invoke-CodeReview -sha $c.Sha -branch $c.Branch -workdir $wt
             } finally {
-                git worktree remove $wt --force 2>$null
-                git worktree prune 2>$null | Out-Null
+                cmd /c "git worktree remove `"$wt`" --force >NUL 2>&1"
+                cmd /c "git worktree prune >NUL 2>&1"
             }
             $verdict = if ($reviewOut -match 'VERDICT:\s*REJEITADO') { 'REJEITADO' } else { 'APROVADO' }
             if (-not $gates.Ok -and $verdict -eq 'APROVADO') { $verdict = 'REJEITADO (gates falharam)' }

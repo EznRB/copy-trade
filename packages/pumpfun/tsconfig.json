@@ -3,7 +3,12 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "composite": true
+    "composite": true,
+    // Clientes codama usam imports sem extensao (padrao bundler/JSR). Este package
+    // compila com moduleResolution Bundler; o ESM real de Node e reparado em build
+    // via scripts/fix-esm-imports.mjs (ver package.json > scripts.build).
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
   },
   "include": ["src"]
 }

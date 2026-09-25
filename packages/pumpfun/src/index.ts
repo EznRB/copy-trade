@@ -1,8 +1,14 @@
 /**
- * @ct/pumpfun — placeholder.
+ * @ct/pumpfun — decoder oficial pump.fun / PumpSwap (F1.5).
  *
- * AVISO (AGENTS.md §2.4): implementar SOMENTE após verificar a documentação
- * oficial do pump.fun (Fase 1+). NUNCA inventar endpoints, contas, instruções
- * ou programas. Tudo que não estiver na documentação oficial é UNKNOWN.
+ * Fontes (ADR-016): IDL oficial pump-fun/pump-public-docs @ 81091419
+ * (idl/pump.json, idl/pump_amm.json — vendored em ./idl).
+ * Geração (ADR-020): codama → src/generated/ (versionado, verificado por fixtures).
  */
-export const PUMPFUN_DOC_SOURCE = 'https://github.com/pump-fun/pump-fun-skills';
+export { PUMPFUN_DOC_SOURCE, PUMPFUN_IDL_SOURCE, PUMPFUN_IDL_SHA } from './sources.js';
+export { decodePumpInstruction, type DecodedSwap } from './decode.js';
+
+// Re-exports mínimos para testes de integração (não fazem parte da API pública).
+export { getBuyInstructionDataEncoder as PUMP_BUY_ENCODER_FOR_TESTS } from './generated/pump/instructions/index.js';
+export { PUMP_PROGRAM_ADDRESS } from './generated/pump/programs/index.js';
+export { PUMP_AMM_PROGRAM_ADDRESS } from './generated/pump_amm/programs/index.js';

@@ -100,6 +100,9 @@ function New-ReviewWorktree([string]$sha) {
     if (Test-Path $wt) { cmd /c "git worktree remove `"$wt`" --force >NUL 2>&1" }
     cmd /c "git worktree add --detach `"$wt`" $sha >NUL 2>&1" | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "git worktree add falhou para $sha" }
+    # .env nao entra no git (gitignored): copiar para o worktree senao testes de DB penduram
+    $envFile = Join-Path $RepoRoot ".env"
+    if (Test-Path $envFile) { Copy-Item $envFile (Join-Path $wt ".env") -Force }
     return $wt
 }
 

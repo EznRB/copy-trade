@@ -20,6 +20,6 @@
   },
   "devDependencies": {
     "prisma": "^5.14.0",
-    "typescript": "^5.4.5"
+    "typescript": "^7.0.2"
   }
 }

@@ -16,6 +16,6 @@
     "clean": "rimraf dist 2>/dev/null || true"
   },
   "devDependencies": {
-    "typescript": "^5.4.5"
+    "typescript": "^7.0.2"
   }
 }

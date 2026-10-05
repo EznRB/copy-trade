@@ -21,10 +21,10 @@
     "@solana/kit": "^6.10.0",
     "@triton-one/yellowstone-grpc": "^7.0.1",
     "helius-sdk": "^3.2.0",
-    "ws": "^8.18.0"
+    "ws": "^8.22.0"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.10",
+    "@types/ws": "^8.18.2",
     "typescript": "^5.4.5"
   }
 }

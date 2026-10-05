@@ -16,10 +16,10 @@
   },
   "dependencies": {
     "@ct/types": "0.1.0",
-    "@solana-program/system": "^0.12.2",
-    "@solana-program/token": "^0.13.0",
-    "@solana/kit": "^6.10.0",
-    "@triton-one/yellowstone-grpc": "^7.0.1",
+    "@solana-program/system": "^0.15.0",
+    "@solana-program/token": "^0.17.0",
+    "@solana/kit": "^8.4.0",
+    "@triton-one/yellowstone-grpc": "^8.0.0",
     "helius-sdk": "^3.2.0",
     "ws": "^8.18.0"
   },
